@@ -4,7 +4,7 @@
   <title><![CDATA[Helei's Tech Notes]]></title>
   <link href="http://heleifz.github.io/atom.xml" rel="self"/>
   <link href="http://heleifz.github.io/"/>
-  <updated>2016-07-28T01:38:05+08:00</updated>
+  <updated>2016-07-28T01:38:53+08:00</updated>
   <id>http://heleifz.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,46 @@
   </author>
   <generator uri="http://www.mweb.im">MWeb</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[面试题设计：拼写纠正系统]]></title>
+    <link href="http://heleifz.github.io/14696424359412.html"/>
+    <updated>2016-07-28T02:00:35+08:00</updated>
+    <id>http://heleifz.github.io/14696424359412.html</id>
+    <content type="html"><![CDATA[
+<p>这是一个具有层次感的面试题目，考察基础算法以及 NLP 和概率知识。灵感来自 Peter Norvig 的一篇小品：</p>
+
+<blockquote>
+<p><a href="http://norvig.com/spell-correct.html">How to Write a spelling corrector</a></p>
+</blockquote>
+
+<h2 id="toc_0">问题1：编辑距离</h2>
+
+<ol>
+<li>手写编辑距离代码，需要对方掌握动态规划，以及良好的心理素质，如果写不出，就问思路。</li>
+<li>反方向算法，给定一个字符串（英文），生成编辑距离为 1 的所有字符串，生成编辑距离为 2 的所有字符串。这题写不出可以滚了。</li>
+</ol>
+
+<h2 id="toc_1">问题2：简单拼写纠正</h2>
+
+<p>当然，不一定每个词都要有结果，大部分词能纠正即可。</p>
+
+<p>用户可能打错一两个字符，可以构建一个编辑距离小于二的候选集，看看里面是否有在字典里的词。</p>
+
+<p>简单的拼写错误模型：打错一个字的概率比打错两个字的概率大，所以查找有优先级。</p>
+
+<p>如果想通了，就很简单。<br/>
+说出思路后，实现一下。</p>
+
+<h2 id="toc_2">问题3: 如何提升纠错效果</h2>
+
+<ol>
+<li>在所有候选中，哪个候选更有可能（拼写错误模型）</li>
+<li>如果这个词本身是对的，但是在上下文中是错的，怎么办（语言模型系列问题，包括各种平滑算法，考知识面）</li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[shared_ptr 原理及事故]]></title>
@@ -366,7 +406,7 @@ git add -A &lt;path&gt; # 新增，修改，删除的文件（文件夹）<br/>
 <code>bash<br/>
 git commit -m &#39;my commit message..&#39;<br/>
 git commit -a # 先 add 再 commit （-am)<br/>
-git commit --amend -m &quot;corrent some error&quot; # amend产生新的ID，请不要amend和别人共享的commit<br/>
+git commit --amend -m &quot;correct some error&quot; # amend产生新的ID，请不要amend和别人共享的commit<br/>
 </code></p>
 
 <h3 id="toc_14"><code>diff</code></h3>

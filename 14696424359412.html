@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
     
-  Git - Helei's Tech Notes
+  面试题设计：拼写纠正系统 - Helei's Tech Notes
   
   </title>
  <meta name="description" content="">
@@ -110,127 +110,38 @@
             <div class="large-9 medium-9 columns">
 
  <div class="markdown-body">
-<h1>Git</h1>
+<h1>面试题设计：拼写纠正系统</h1>
 
-<h2 id="toc_0">1. 对象模型</h2>
-
-<ul>
-<li>Git由一堆对象组成，每个对象都有一个SHA1的40位编码</li>
-<li>每个文件都是一个blob，由内容进行hash，同样内容的文件在版本库内<strong>只有一份</strong>。</li>
-<li>每个目录都是一个tree，tree中可以有tree也可以有blob。（文件名等信息在tree中保存）</li>
-<li>每个commit都指向一个tree，一个或多个parent，包含作者，email，日期，消息等数据。（tag就是一个commit的引用而已）</li>
-<li><strong>Git Repo就是由commit组成的网络</strong>。</li>
-</ul>
+<p>这是一个具有层次感的面试题目，考察基础算法以及 NLP 和概率知识。灵感来自 Peter Norvig 的一篇小品：</p>
 
 <blockquote>
-<p>既然如此，我们就得找到表示commit的方式</p>
+<p><a href="http://norvig.com/spell-correct.html">How to Write a spelling corrector</a></p>
 </blockquote>
 
-<h2 id="toc_1">2. Commit的表示法</h2>
+<h2 id="toc_0">问题1：编辑距离</h2>
 
-<h3 id="toc_2">基础</h3>
+<ol>
+<li>手写编辑距离代码，需要对方掌握动态规划，以及良好的心理素质，如果写不出，就问思路。</li>
+<li>反方向算法，给定一个字符串（英文），生成编辑距离为 1 的所有字符串，生成编辑距离为 2 的所有字符串。这题写不出可以滚了。</li>
+</ol>
 
-<ul>
-<li>branchname : 访问branchname最新的commit</li>
-<li>tagname : 访问tagname引用的commit</li>
-<li>HEAD</li>
-<li>完整的hash</li>
-<li>hash的前几位（7位一般就够了）</li>
-</ul>
+<h2 id="toc_1">问题2：简单拼写纠正</h2>
 
-<h3 id="toc_3">组合</h3>
+<p>当然，不一定每个词都要有结果，大部分词能纠正即可。</p>
 
-<ul>
-<li>name^ : name的parent commit</li>
-<li>name<sup>^</sup> : parent的parent</li>
-<li>name<sup>n</sup> : 第 n 个 parent（在merge的情况下）</li>
-<li>name~n : 倒数第 n 个 parent</li>
-<li>name:path : commit中的文件</li>
-</ul>
+<p>用户可能打错一两个字符，可以构建一个编辑距离小于二的候选集，看看里面是否有在字典里的词。</p>
 
-<h3 id="toc_4">范围</h3>
+<p>简单的拼写错误模型：打错一个字的概率比打错两个字的概率大，所以查找有优先级。</p>
 
-<ul>
-<li>name1..name2 : name2能回溯到的，但是name1不能回溯到的（master..，相当于 mater..HEAD，当前分支的修改）</li>
-<li>name1...name2 : name1的和name2的祖先，但不是共同祖先</li>
-</ul>
+<p>如果想通了，就很简单。<br/>
+说出思路后，实现一下。</p>
 
-<h3 id="toc_5">描述</h3>
+<h2 id="toc_2">问题3: 如何提升纠错效果</h2>
 
-<pre><code class="language-bash">--since=&quot;two weeks ago&quot;
---until=&quot;1 week ago&quot;
---grep=pattern
---committer=pattern
---author=pattern
---no-merges
-</code></pre>
-
-<h2 id="toc_6">3. 三个位置</h2>
-
-<h3 id="toc_7">Working Tree</h3>
-
-<p>当前的工作目录，包含文件。<code>git add</code>以后，进入 index</p>
-
-<h3 id="toc_8">Index</h3>
-
-<p>暂存区。所谓 index 是指，暂存区里包含了各种新增 object 的引用（索引）。<code>git commit</code>以后，进入 branch。</p>
-
-<h3 id="toc_9">Branch</h3>
-
-<p>当前的分支。</p>
-
-<h2 id="toc_10">4. 部分操作</h2>
-
-<h3 id="toc_11"><code>config</code></h3>
-
-<p>在使用 git 前必须设置好名字和邮箱，如果不用 global 参数，则是设置项目专用的作者信息。</p>
-
-<pre><code class="language-bash">$ git config --global user.name &#39;Your Name&#39;
-$ git config --global user.email you@somedomain.com
-</code></pre>
-
-<h3 id="toc_12"><code>add</code></h3>
-
-<p>将文件从 working tree 添加到 index<br/>
-<code>bash<br/>
-git add &lt;path&gt; # 新增，修改的文件（文件夹）<br/>
-git add -u &lt;path&gt; # 修改，删除的文件（文件夹）<br/>
-git add -A &lt;path&gt; # 新增，修改，删除的文件（文件夹）<br/>
-</code></p>
-
-<h3 id="toc_13"><code>commit</code></h3>
-
-<p>将 index 的 tree 作为下一个 commit，加入当前 branch。<br/>
-<code>bash<br/>
-git commit -m &#39;my commit message..&#39;<br/>
-git commit -a # 先 add 再 commit （-am)<br/>
-git commit --amend -m &quot;correct some error&quot; # amend产生新的ID，请不要amend和别人共享的commit<br/>
-</code></p>
-
-<h3 id="toc_14"><code>diff</code></h3>
-
-<pre><code class="language-bash">git diff # unstaged change
-git diff --cached # difference between index and branch
-git diff HEAD # diff between working tree + index and branch
-</code></pre>
-
-<h3 id="toc_15"><code>checkout</code></h3>
-
-<pre><code class="language-bash"># 注：忽略未commit的文件，--force参数可以暴力覆盖
-
-git checkout &lt;branch&gt;  # 更新三棵树和HEAD
-git checkout &lt;commit&gt;  # 更新HEAD和working tree
-git checkout           # 用 last commit 或 index 来复位 working tree
-</code></pre>
-
-<h3 id="toc_16"><code>reset</code></h3>
-
-<p>reset 指令不是单纯修改HEAD（与checkout不同），而是先修改branch，然后把HEAD指向新的branch。</p>
-
-<pre><code class="language-bash">git reset --soft  # 只修改 branch
-git reset --mixed # 默认，修改 branch + index 
-git reset --hard  # 修改 branch + index + working tree
-</code></pre>
+<ol>
+<li>在所有候选中，哪个候选更有可能（拼写错误模型）</li>
+<li>如果这个词本身是对的，但是在上下文中是错的，怎么办（语言模型系列问题，包括各种平滑算法，考知识面）</li>
+</ol>
 
 
 </div>
@@ -242,15 +153,13 @@ git reset --hard  # 修改 branch + index + working tree
   <div class="large-6 columns">
 	<div class="text-left" style="padding:15px 0px;">
 		
-	        <a href="14696398760857.html"  title="Previous Post: shared_ptr 原理及事故">&laquo; shared_ptr 原理及事故</a>
-	    
 	</div>
   </div>
   <div class="large-6 columns">
 	<div class="text-right" style="padding:15px 0px;">
 		
-	        <a href="14696391901766.html" 
-	        title="Next Post: Text Rank 算法应用">Text Rank 算法应用 &raquo;</a>
+	        <a href="14696398760857.html" 
+	        title="Next Post: shared_ptr 原理及事故">shared_ptr 原理及事故 &raquo;</a>
 	    
 	</div>
   </div>
@@ -263,7 +172,7 @@ git reset --hard  # 修改 branch + index + working tree
 </div>
 <script type="text/javascript">
 	$(function(){
-		var currentURL = '14696393471602.html';
+		var currentURL = '14696424359412.html';
 		$('#side-nav a').each(function(){
 			if($(this).attr('href') == currentURL){
 				$(this).parent().addClass('active');
