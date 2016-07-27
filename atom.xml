@@ -4,7 +4,7 @@
   <title><![CDATA[Helei's Tech Notes]]></title>
   <link href="http://heleifz.github.io/atom.xml" rel="self"/>
   <link href="http://heleifz.github.io/"/>
-  <updated>2016-07-28T01:10:13+08:00</updated>
+  <updated>2016-07-28T01:38:05+08:00</updated>
   <id>http://heleifz.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -430,6 +430,8 @@ git reset --hard  # 修改 branch + index + working tree
     <updated>2016-07-28T00:36:51+08:00</updated>
     <id>http://heleifz.github.io/14696374110477.html</id>
     <content type="html"><![CDATA[
+<p><img src="media/14696374110477/1369025_221049006000_2.jpg" alt="1369025_221049006000_2" style="width:443px;"/></p>
+
 <h2 id="toc_0">介绍</h2>
 
 <h2 id="toc_1">模型</h2>
