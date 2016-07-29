@@ -47,6 +47,8 @@
         <li><label>技术</label></li>
 
           
+            <li><a title="Apache 配置文件解释" href="14698086378177.html">Apache 配置文件解释</a></li>
+          
             <li><a title="shared_ptr 原理及事故" href="14696398760857.html">shared_ptr 原理及事故</a></li>
           
             <li><a title="Git" href="14696393471602.html">Git</a></li>
@@ -56,6 +58,8 @@
         <li class="divider"></li>
         <li><label>算法</label></li>
 
+          
+            <li><a title="SVM 推导" href="14698080869715.html">SVM 推导</a></li>
           
             <li><a title="Text Rank 算法应用" href="14696391901766.html">Text Rank 算法应用</a></li>
           
@@ -82,6 +86,8 @@
                     
                       <li class="side-title"><span>技术</span></li>
                         
+                          <li><a title="Apache 配置文件解释" href="14698086378177.html">Apache 配置文件解释</a></li>
+                        
                           <li><a title="shared_ptr 原理及事故" href="14696398760857.html">shared_ptr 原理及事故</a></li>
                         
                           <li><a title="Git" href="14696393471602.html">Git</a></li>
@@ -89,6 +95,8 @@
 
                     
                       <li class="side-title"><span>算法</span></li>
+                        
+                          <li><a title="SVM 推导" href="14698080869715.html">SVM 推导</a></li>
                         
                           <li><a title="Text Rank 算法应用" href="14696391901766.html">Text Rank 算法应用</a></li>
                         
@@ -110,253 +118,64 @@
 
 	
 		<div class="markdown-body">
-		<h1>shared_ptr 原理及事故</h1>
+		<h1>Apache 配置文件解释</h1>
 
-		<h2 id="toc_0">new与赋值的坑</h2>
+		<p>我是业余 Web 开发，平时主要是做算法，大概每隔几个月会搭一个网站。服务器用的是 Apache，每次配置的时候，都奉行拿来主义，从别的地方把 <strong>httd.conf</strong> 以及 <strong>.htaccess</strong> 文件内容复制过来，对配置只知道个大概，没有深入学习。</p>
 
-<p>赋值（assignment）和new运算符在C++与Java（或C#）中的行为有本质的区别。在Java中，new是对象的构造，而赋值运算是引用的传递；而在C++中，赋值运算符意味着&quot;构造&quot;，或者&quot;值的拷贝&quot;，new运算符意味着在堆上分配内存空间，并将这块内存的管理权（责任）交给用户。C++中的不少坑，就是由new和赋值引起的。</p>
+<p>周末做新项目的时候，专门去 Apache 官网阅读了一下 <a href="http://httpd.apache.org/docs/2.4/">User Guide</a>，发现还是很好懂的，以前很多的疑惑都解开了。这篇文章我整理一下 Apache 配置架构，给以后的我复习用。</p>
 
-<p>在C++中使用new的原因除了堆上能定义体积更大的数据结构之外，就是能使用C++中的dynamic dispatch（也叫多态）了：只有指针（和引用）才能使用虚函数来展现多态性。在这时，new出来的指针变得很像Java中的普通对象，赋值意味着引用的传递，方法调用会呈现出多态性，我们进入了面向对象的世界，一切十分美好，除了&quot;要手动释放内存&quot;。</p>
+<h2 id="toc_0">Apache 配置架构</h2>
 
-<p>在简单的程序中，我们不大可能忘记释放new出来的内存，随着程序规模的增大，我们忘了delete的概率也随之增大，这是因为C++是如此一个精神分裂的语言，赋值运算符竟然同时展现出&quot;值拷贝&quot;和&quot;引用传递&quot;两种截然不同的语义，这种不一致性导致&quot;内存泄漏&quot;成为C++新手最常犯的错误之一。当然你可以说，只要细心一点，一定能把所有内存泄漏从代码中清除。但手动管理内存更严重的问题在于，内存究竟要由谁来分配和释放呢？指针的赋值将同一对象的引用散播到程序每个角落，但是该对象的删除却只能发生一次，当你在代码中用完这么一个资源指针：resourcePtr，你敢delete它吗？它极有可能同时被多个对象拥有着，而这些对象中的任何一个都有可能在之后使用该资源，而这些对象中的另外一个，可能在它的析构函数中释放该资源。&quot;那我不delete不就行了吗？&quot;，你可能这么问，当然行， 这时候你要面对另外一种可能性：也许你是这个指针的唯一使用者，如果你用完不delete，内存就泄漏了。</p>
+<p>Apache 本身的架构是一个核心＋外围的 Module，它的配置也遵循这个结构，本文介绍 Apache 的核心配置，以及 <strong>mod_wsgi</strong> 和 <strong>mod_rewrite</strong> 两个模块。</p>
 
-<p>开发者日常需要在工作中使用不同的库，而以上两种情况可能会在这些库中出现，假设库作者们的性格截然不同，导致这两个库在资源释放上采取了不同的风格，在这个时候，你面对一个用完了的资源指针，是删还是不删呢？这个问题从根本上来说，是因为C++的语言特性让人容易搞错&quot;资源的拥有者&quot;这个概念，资源的拥有者，从来都只能是系统，当我们需要时便向系统请求，当我们不需要时就让系统自己捡回去（Garbage Collector），当我们试图自己当资源的主人时，一系列坑爹的问题就会接踵而来。</p>
+<h3 id="toc_1">基本语法</h3>
 
-<h2 id="toc_1">异常安全的类</h2>
+<p>Apache 的配置位于 <strong>/etc/apache2/httpd.conf</strong> 或者 <strong>apache2.conf</strong>  之类的地方，具体路径各个平台不同。每条配置都是一个指令 (directive) :</p>
 
-<p>我们再来看另外一个与new运算符紧密相关的问题：如何写一个异常安全（exception safe）的类。</p>
+<blockquote>
+<p>指令名(如Listen) 配置值(如80)</p>
+</blockquote>
 
-<p>异常安全简单而言就是：当你的类抛出异常后，你的程序会不会爆掉。爆掉的情况主要包括：内存泄漏，以及不一致的类状态（例如一个字符串类，它的size()方法返回的字符串大小与实际的字符串大小不同），这里仅讨论内存泄漏的情况。</p>
+<p>利用 <strong>Include</strong> 指令，配置文件还可以包含其它的配置文件或文件夹。</p>
 
-<p>为了让用户免去手动delete资源的烦恼，不少类库采用了RAII风格，即<em>Resource Acquisition Is Initialization</em>，这种风格采用类来封装资源，在类的构造函数中获取资源，在类的析构函数中释放资源，这个资源可以是内存，可以是一个网络连接，也可以是mutex这样的线程同步量。在RAII的感召下，我们来写这么一个人畜无害的类：</p>
+<h3 id="toc_2">作用域（Directory, Location, VirtualHost, .htaccess）</h3>
 
-<pre><code class="language-cpp">class TooSimple {
-private:
-    Resource *a;
-    Resource *b;
-public
-    TooSimple() {
-        a = new Resource();
-        b = new Resource(); //在这里抛出异常
-    }
-    ~TooSimple() {
-        delete a;
-        delete b;
-    }
-};
+<p>大部分指令都可以作用于某个特定的路径，这个路径可以用本机文件系统路径表示(Directory)，也可以用网络位置表示(Location)，这两种表示方式很多时候可以互换，不过最好用本机路径，这样安全一点，因为多个 <strong>Location</strong> 都可以到达同一个位置。</p>
+
+<p>Directory 的配置是递归传播的。</p>
+
+<p>作用域上的配置是经过 merge 后生效的，merge 的优先级是：<br/>
+1. &lt;Directory&gt; (except regular expressions) and .htaccess done simultaneously (with .htaccess, if allowed, overriding &lt;Directory&gt;)<br/>
+2. &lt;DirectoryMatch&gt; (and &lt;Directory &quot;~&quot;&gt;)<br/>
+3. &lt;Files&gt; and &lt;FilesMatch&gt; done simultaneously<br/>
+4. &lt;Location&gt; and &lt;LocationMatch&gt; done simultaneously<br/>
+5. &lt;If&gt;<br/>
+配置按照出现的顺序处理，不过对于 Directory，处理顺序是 <strong>最短-&gt;最长</strong>，例如，<code>&lt;Directory &quot;/var/web/dir&quot;&gt;</code> 会先于 <code>&lt;Directory &quot;/var/web/dir/subdir&quot;&gt;</code> 处理，如果多个 Directory 指令作用于同一路径，那么后处理的会覆盖到前处理的上面。<strong>(Apache有些逻辑是 first match，例如 Alias，有些是后面覆盖前面）</strong></p>
+
+<p>如果一个 Directory 设定了 <code>AllowOverride All</code>，那么它还可以用 .htaccess 中的配置来覆盖。</p>
+
+<p>VirtualHost 根据访问者使用的域名(name based)或者访问的 IP 地址(IP based)，使用特定的配置，这样可以实现一个服务器 Host 多个网站。VirtualHost 的配置会覆盖全局配置。</p>
+
+<h2 id="toc_3">mod_wsgi</h2>
+
+<p>mod_wsgi 通过 WSGIScriptAlias 这个指令，把某些指令路由给 Python 脚本处理，和 Alias 一样，第一个 Match 的生效。</p>
+
+<p><a href="http://ssmax.net/archives/977.html">mod_wsgi的两种工作模式</a></p>
+
+<h2 id="toc_4">mod_rewrite</h2>
+
+<pre><code class="language-apache">&lt;IfModule mod_rewrite.c &gt;
+    RewriteEngine On
+    # 拼 URL 时使用的前缀
+    RewriteBase /
+    # test string 可以用一堆常量，例如 %{REQUEST_URI} 
+    # CondPattern 可以是正则表达式，也可以是一些其它的 test，例如文件是否存在
+    # 默认是 AND，可以换成 [OR]
+    RewriteCond TestString CondPattern [OR]
+    # 支持 backref
+    RewriteRule Pattern Substitution [flags]
+&lt;/IfModuel&gt;
 </code></pre>
-
-<p>这个看似简单的类，是有内存泄漏危险的哟！为了理解这一点，首先简单介绍一下C++在抛出异常时所做的事吧：</p>
-
-<p>如果一个new操作（及其调用的构造函数）中抛出了异常，那么它分配的内存空间将自动被释放。<br/>
-一个函数（或方法）抛出异常，那么它首先将当前栈上的变量全部清空(unwinding)，如果变量是类对象的话，将调用其析构函数，接着，异常来到call stack的上一层，做相同操作，直到遇到catch语句。<br/>
-指针是一个普通的变量，不是类对象，所以在清空call stack时，指针指向资源的析构函数将不会调用。<br/>
-根据这三条规则，我们很容易发现，如果<code>b = new Resource()</code>句抛出异常，那么构造函数将被强行终止，根据规则1，b分配的资源将被释放（假设Resource类本身是异常安全的），指针a，b从call stack上清除，由于此时构造函数还未完成，所以TooSimple的析构函数也不会被调用（都没构造完呢，现在只是一个&quot;部分初始化&quot;的对象，析构函数自然没理由被调用），a已经被分配了资源，但是call stack被清空，地址已经找不到了，于是delete永远无法执行，于是内存泄漏发生了。</p>
-
-<p>这个问题有一个很直接的&quot;解决&quot;方案，那就是把<code>b = new Resource()</code>包裹在一个try-catch块中，并在catch里将执行delete a，这样做当然没问题，但我们的代码逻辑变得复杂了，且当类需要分配的资源种类增多的时候，这种处理办法会让程序的可读性急剧下降。这时候我们不禁想：要是指针变量能像类对象一样地&quot;析构&quot;就好了，一旦指针具有类似析构的行为，那么在call stack被清空时，指针会在&quot;析构&quot;时实现自动的delete。怀着这种想法，我们写了这么一个类模版：</p>
-
-<pre><code class="language-cpp">template &lt;typename T&gt;
-class StupidPointer {
-public:
-    T *ptr;
-    StupidPointer(T *p) : ptr(p) {}
-    ~StupidPointer() { delete ptr; }
-};
-有了这个&quot;酷炫&quot;的类，现在我们的构造函数可以这么写：
-TooSimple() {
-    a = StupidPointer&lt;Resource&gt;(new Resource());
-    b = StupidPointer&lt;Resource&gt;(new Resource());
-};
-</code></pre>
-
-<p>由于此时的a，已经不再是指针，而是<code>StupidPointer&lt;Resource&gt;</code>类，在清空call stack时，它的析构函数被调用，于是a指向的资源被释放了。但是，StupidPointer类有一个严重的问题：当多个StupidPointer对象管理同一个指针时，一个对象析构后，剩下对象中保存的指针将变成指向无效内存地址的&quot;野指针&quot;（因为已经被delete过了啊），如果delete一个野指针，电脑就会爆炸（严肃）。</p>
-
-<p>C++11的标准库提供了两种解决问题的思路：1、不允许多个对象管理一个指针（unique_ptr）；2、允许多个对象管理同一个指针，但仅当管理这个指针的最后一个对象析构时才调用delete（shared_ptr）。这两个思路的共同点是：只！允！许！delete一次！</p>
-
-<p>本篇文章里，我们仅讨论shared_ptr。</p>
-
-<h2 id="toc_2">shared_ptr</h2>
-
-<p>在将shared_ptr的使用之前，我们首先来看看它的基本实现原理。</p>
-
-<p>刚才说到，当多个shared_ptr管理同一个指针，仅当最后一个shared_ptr析构时，指针才被delete。这是怎么实现的呢？答案是：引用计数（reference counting）。引用计数指的是，所有管理同一个裸指针（raw pointer）的shared_ptr，都共享一个引用计数器，每当一个shared_ptr被赋值（或拷贝构造）给其它shared_ptr时，这个共享的引用计数器就加1，当一个shared_ptr析构或者被用于管理其它裸指针时，这个引用计数器就减1，如果此时发现引用计数器为0，那么说明它是管理这个指针的最后一个shared_ptr了，于是我们释放指针指向的资源。</p>
-
-<p>在底层实现中，这个引用计数器保存在某个内部类型里（这个类型中还包含了deleter，它控制了指针的释放策略，默认情况下就是普通的delete操作），而这个内部类型对象在shared_ptr第一次构造时以指针的形式保存在shared_ptr中。shared_ptr重载了赋值运算符，在赋值和拷贝构造另一个shared_ptr时，这个指针被另一个shared_ptr共享。在引用计数归零时，这个内部类型指针与shared_ptr管理的资源一起被释放。此外，为了保证线程安全性，引用计数器的加1，减1操作都是原子操作，它保证shared_ptr由多个线程共享时不会爆掉。</p>
-
-<p>这就是shared_ptr的实现原理，现在我们来看看怎么用它吧！（超简单）</p>
-
-<p><code>std::shared_ptr</code>位于头文件<memory>中（这里只讲C++11，boost的shared_ptr当然是放在boost的头文件中），下面我以代码示例的形式展现它的用法，具体文档可以看这里。</p>
-
-<pre><code class="language-cpp">// 初始化
-shared_ptr&lt;int&gt; x = shared_ptr&lt;int&gt;(new int); // 这个方法有缺陷，下面我会说
-shared_ptr&lt;int&gt; y = make_shared&lt;int&gt;();
-shared_ptr&lt;Resource&gt; obj = make_shared&lt;Resource&gt;(arg1, arg2); // arg1, arg2是Resource构造函数的参数
-// 赋值
-shared_ptr&lt;int&gt; z = x; // 此时z和x共享同一个引用计数器
-// 像普通指针一样使用
-int val = *x;
-assert (x == z);
-assert (y != z);
-assert (x != nullptr);
-obj-&gt;someMethod();
-// 其它辅助操作
-x.swap(z); // 交换两个shared_ptr管理的裸指针（当然，包含它们的引用计数）
-obj.reset(); // 重置该shared_ptr（引用计数减1）
-</code></pre>
-
-<p>太好用了！</p>
-
-<h2 id="toc_3">错误用法1：循环引用</h2>
-
-<p>shared_ptr的一个最大的缺点，或者说，引用计数策略最大的缺点，就是循环引用（cyclic reference），下面是一个典型的事故现场：</p>
-
-<pre><code class="language-cpp">class Observer; // 前向声明
-class Subject {
-private:
-    std::vector&lt;shared_ptr&lt;Observer&gt;&gt; observers;
-public:
-    Subject() {}
-    addObserver(shared_ptr&lt;Observer&gt; ob) {
-        observers.push_back(ob);
-    }
-    // 其它代码
-    ..........
-};
-class Observer {
-private:
-    shared_ptr&lt;Subject&gt; object;
-public:
-    Observer(shared_ptr&lt;Object&gt; obj) : object(obj) {}
-    // 其它代码
-    ...........
-};
-</code></pre>
-
-<p>目标（Subject）类连接着多个观察者（Observer）类，当某个事件发生时，目标类可以遍历观察者数组observers，对每个观察者进行&quot;通知&quot;，而观察者类中，也保存着目标类的shared_ptr，这样多个观察者之间可以以目标类为桥梁进行沟通，除了会发生内存泄漏以外，这是很不错的设计模式嘛！等等，不是说用了shared_ptr管理资源后就不会内存泄漏了吗？怎么又漏了？</p>
-
-<p>这就是引用计数模型失效的唯一的情况：循环引用。循环引用指的是，一个引用通过一系列的引用链，竟然引用回自身，上面的例子中，<code>Subject-&gt;Observer-&gt;Subject</code>就是这么一条环形的引用链。假设我们的程序中只有一个变量<code>shared_ptr&lt;Subject&gt; p</code>，此时，p指向的对象不仅通过该shared_ptr引用自己，还通过它包含的Observer中的object成员变量引用回自己，于是它的引用计数是2，每个Observer的引用计数都是1。当p析构时，它的引用计数减1，变成2-1=1（大于0!），p指向对象的析构函数将不会被调用，于是p和它包含的每个Observer对象在程序结束时依然驻留在内存中没被delete，形成内存泄漏。</p>
-
-<h2 id="toc_4">weak_ptr</h2>
-
-<p>为了解决这一问题，标准库提供了<code>std::weak_ptr</code>（弱引用），它也位于<memory>中。</p>
-
-<p>weak_ptr是shared_ptr的&quot;观察者&quot;，它与一个shared_ptr绑定，但却不参与引用计数的计算，在需要时，它还能摇身一变，生成一个与它所&quot;观察&quot;的shared_ptr共享引用计数器的新shared_ptr。总而言之，weak_ptr的作用就是：在需要时变出一个shared_ptr，在其它时候不干扰shared_ptr的引用计数。</p>
-
-<p>在上面的例子中，我们只需简单地将Observer中object成员的类型换成<code>std::weak_ptr&lt;Subject&gt;</code>即可解决内存泄漏的问题，此刻（接着上面的例子），p指向对象的引用计数为1，所以在p析构时，Subject指针将被delete，其中包含的observers数组在析构时，内部的Observer对象的引用计数也将变为0，故它们也被delete了，资源释放得干干净净。</p>
-
-<p>下面，是weak_ptr的使用方法：</p>
-
-<pre><code class="language-cpp">std::shared_ptr&lt;int&gt; sh = std::make_shared&lt;int&gt;();
-// 用一个shared_ptr初始化
-std::weak_ptr&lt;int&gt; w(sh);
-// 变出shared_ptr
-std::shared_ptr&lt;int&gt; another = w.lock();
-// 判断weak_ptr所观察的shared_ptr的资源是否已经释放
-bool isDeleted = w.expired();
-</code></pre>
-
-<h2 id="toc_5">错误用法2：多个无关的shared_ptr管理同一裸指针</h2>
-
-<p>考虑下面这个情况：</p>
-
-<pre><code class="language-cpp">int *a = new int;
-std::shared_ptr&lt;int&gt; p1(a);
-std::shared_ptr&lt;int&gt; p2(a);
-</code></pre>
-
-<p>p1和p2同时管理同一裸指针a，与之前的例子不同的是，此时的p1和p2有着完全独立的两个引用计数器（初始化p2时，用的是裸指针a，于是我们没有任何办法获取p1的引用计数！），于是，上面的代码会导致a被delete两次，分别由p1和p2的析构导致，电脑再一次爆炸了。</p>
-
-<p>为了避免这种情况的发生，我们永远不要将new用在shared_ptr构造函数参数列表以外的地方，或者干脆不用new，改用make_shared。</p>
-
-<p>即便我们的程序严格采取上述做法，C++还提供另外一种绕过shared_ptr，直接获取裸指针的方式，那就是this指针。请看下面的事故现场：</p>
-
-<pre><code class="language-cpp">class A {
-public:
-    std::shared_ptr&lt;A&gt; getShared() {
-        return std::shared_ptr&lt;A&gt;(this);
-    }
-};
-int main() {
-    std::shared_ptr&lt;A&gt; pa = std::make_shared&lt;A&gt;();
-    std::shared_ptr&lt;A&gt; pbad = pa-&gt;getShared();
-    return 0;
-}
-</code></pre>
-
-<p>在此次事故中，pa和pbad拥有各自独立的引用计数器，所以程序将发生相同的&quot;delete野指针&quot;错误。总而言之，管理同一资源的shared_ptr，只能由同一个初始shared_ptr通过一系列赋值或者拷贝构造途径得来。更抽象的说，管理同一资源的shared_ptr的构造顺序，必须是一个无环有向的连通图，无环能够保证没有循环引用，连通性能够保证每个shared_ptr都来自于相同的源。</p>
-
-<p>另外，标准库提供了一种特殊的接口，来解决&quot;生成this指针的shared_ptr&quot;的问题。</p>
-
-<h2 id="toc_6">enable_shared_from_this</h2>
-
-<p>enable_shared_from_this是标准库中提供的接口（一个基类啦）：</p>
-
-<pre><code class="language-cpp">template&lt;typename T&gt;
-class enable_shared_from_this {
-public:
-    shared_ptr&lt;T&gt; shared_from_this();
-}
-</code></pre>
-
-<p>如果想要一个由shared_ptr管理的类A对象能够在方法内部得到this指针的shared_ptr，且返回的shared_ptr和管理这个类的shared_ptr共享引用计数，只需让这个类派生自<code>enable_shared_from_this&lt;A&gt;</code>即可，之后调用<code>shared_from_this()</code>即可获得正确的 shared_ptr。</p>
-
-<p>一般来说，这个接口是通过weak_ptr实现的：enable_shared_from_this中包含一个weak_ptr，在初始化shared_ptr时，构造函数会检测到这个该类派生于enable_shared_from_this（通过模版黑魔法很容易就能实现这个功能啦），于是将这个weak_ptr指向初始化的shared_ptr。调用shared_from_this，本质上就是weak_ptr的一个lock操作：</p>
-
-<pre><code class="language-cpp">class A : enable_shared_from_this&lt;A&gt; {
-    // ......
-};
-int main() {
-    std::shared_ptr&lt;A&gt; pa = std::make_shared&lt;A&gt;();
-    std::shared_ptr&lt;A&gt; pgood = pa-&gt;shared_from_this();
-    return 0;
-}
-</code></pre>
-
-<h2 id="toc_7">错误用法3：直接用new构造多个shared_ptr作为实参</h2>
-
-<p>之前提到的C++异常处理机制，让我们可以很容易发现下面的代码有内存泄漏的危险：</p>
-
-<pre><code class="language-cpp">// 声明
-void f(A *p1, B *p2);
-// 使用
-f(new A, new B);
-</code></pre>
-
-<p>假如new A先于new B发生（我说&quot;假如&quot;，是因为C++的函数参数的计算顺序是不确定的），那么如果new B抛出异常，那么new A分配的内存将会发生泄漏。作为一个刚学会shared_ptr的优秀程序员，我们可以如此&quot;解决&quot;该问题：</p>
-
-<pre><code class="language-cpp">// 声明
-void f(shared_ptr&lt;A&gt; p1, shared_ptr&lt;B&gt; p2);
-// 使用
-f(shared_ptr&lt;A&gt;(new A), shared_ptr&lt;B&gt;(new B));
-</code></pre>
-
-<p>可惜，这么写依然有可能发生内存泄漏，因为两个shared_ptr的构造有可能发生在new A与new B之后，这涉及到C++里称作sequence after，或sequence point的性质，该性质保证：</p>
-
-<ol>
-<li>new A在<code>shared_ptr&lt;A&gt;</code>构造之前发生</li>
-<li>new B在<code>shared_ptr&lt;B&gt;</code>构造之前发生</li>
-<li>两个shared_ptr的构造在f调用之前发生</li>
-</ol>
-
-<p>在满足以上三条性质的前提下，各操作可以以任意顺序执行。详情请见Herb Shutter的文章：Exception-Safe Function Calls 。</p>
-
-<h2 id="toc_8">make_shared</h2>
-
-<p>若我们这么调用f：</p>
-
-<pre><code class="language-cpp">f(make_shared&lt;A&gt;(), make_shared&lt;B&gt;());
-</code></pre>
-
-<p>那么就不可能发生内存泄漏了，原因依然是sequence after性质。sequence after性质保证，如果两个函数的执行顺序不确定（如本例，作为另一个函数的两个参数），那么在一个函数执行时，另一个不会执行（倘若参数是１＋１和3 + 3*6这种表达式，那么加法和乘法甚至允许交错执行，sequence after性质真是有够复杂），于是，如果<code>make_shared&lt;A&gt;</code>构造完成了，<code>make_shared&lt;B&gt;</code>中抛出异常，那么A的资源能被正确释放。与上面用new来初始化的情形对比，make_shared保证了第二new发生的时候，第一个new所分配的资源已经被shared_ptr管理起来了，故在异常发生时，能正确释放资源。</p>
-
-<p>一句话建议：总是使用make_shared来生成shared_ptr！</p>
-
-<h2 id="toc_9">结论</h2>
-
-<p>用shared_ptr，不用new<br/>
-使用weak_ptr来打破循环引用<br/>
-用make_shared来生成shared_ptr<br/>
-用enable_shared_from_this来使一个类能获取自身的shared_ptr</p>
 
 
 		</div>

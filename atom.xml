@@ -4,7 +4,7 @@
   <title><![CDATA[Helei's Tech Notes]]></title>
   <link href="http://heleifz.github.io/atom.xml" rel="self"/>
   <link href="http://heleifz.github.io/"/>
-  <updated>2016-07-29T23:57:52+08:00</updated>
+  <updated>2016-07-30T00:02:42+08:00</updated>
   <id>http://heleifz.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,269 @@
   </author>
   <generator uri="http://www.mweb.im">MWeb</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Apache 配置文件解释]]></title>
+    <link href="http://heleifz.github.io/14698086378177.html"/>
+    <updated>2016-07-30T00:10:37+08:00</updated>
+    <id>http://heleifz.github.io/14698086378177.html</id>
+    <content type="html"><![CDATA[
+<p>我是业余 Web 开发，平时主要是做算法，大概每隔几个月会搭一个网站。服务器用的是 Apache，每次配置的时候，都奉行拿来主义，从别的地方把 <strong>httd.conf</strong> 以及 <strong>.htaccess</strong> 文件内容复制过来，对配置只知道个大概，没有深入学习。</p>
+
+<p>周末做新项目的时候，专门去 Apache 官网阅读了一下 <a href="http://httpd.apache.org/docs/2.4/">User Guide</a>，发现还是很好懂的，以前很多的疑惑都解开了。这篇文章我整理一下 Apache 配置架构，给以后的我复习用。</p>
+
+<h2 id="toc_0">Apache 配置架构</h2>
+
+<p>Apache 本身的架构是一个核心＋外围的 Module，它的配置也遵循这个结构，本文介绍 Apache 的核心配置，以及 <strong>mod_wsgi</strong> 和 <strong>mod_rewrite</strong> 两个模块。</p>
+
+<h3 id="toc_1">基本语法</h3>
+
+<p>Apache 的配置位于 <strong>/etc/apache2/httpd.conf</strong> 或者 <strong>apache2.conf</strong>  之类的地方，具体路径各个平台不同。每条配置都是一个指令 (directive) :</p>
+
+<blockquote>
+<p>指令名(如Listen) 配置值(如80)</p>
+</blockquote>
+
+<p>利用 <strong>Include</strong> 指令，配置文件还可以包含其它的配置文件或文件夹。</p>
+
+<h3 id="toc_2">作用域（Directory, Location, VirtualHost, .htaccess）</h3>
+
+<p>大部分指令都可以作用于某个特定的路径，这个路径可以用本机文件系统路径表示(Directory)，也可以用网络位置表示(Location)，这两种表示方式很多时候可以互换，不过最好用本机路径，这样安全一点，因为多个 <strong>Location</strong> 都可以到达同一个位置。</p>
+
+<p>Directory 的配置是递归传播的。</p>
+
+<p>作用域上的配置是经过 merge 后生效的，merge 的优先级是：<br/>
+1. &lt;Directory&gt; (except regular expressions) and .htaccess done simultaneously (with .htaccess, if allowed, overriding &lt;Directory&gt;)<br/>
+2. &lt;DirectoryMatch&gt; (and &lt;Directory &quot;~&quot;&gt;)<br/>
+3. &lt;Files&gt; and &lt;FilesMatch&gt; done simultaneously<br/>
+4. &lt;Location&gt; and &lt;LocationMatch&gt; done simultaneously<br/>
+5. &lt;If&gt;<br/>
+配置按照出现的顺序处理，不过对于 Directory，处理顺序是 <strong>最短-&gt;最长</strong>，例如，<code>&lt;Directory &quot;/var/web/dir&quot;&gt;</code> 会先于 <code>&lt;Directory &quot;/var/web/dir/subdir&quot;&gt;</code> 处理，如果多个 Directory 指令作用于同一路径，那么后处理的会覆盖到前处理的上面。<strong>(Apache有些逻辑是 first match，例如 Alias，有些是后面覆盖前面）</strong></p>
+
+<p>如果一个 Directory 设定了 <code>AllowOverride All</code>，那么它还可以用 .htaccess 中的配置来覆盖。</p>
+
+<p>VirtualHost 根据访问者使用的域名(name based)或者访问的 IP 地址(IP based)，使用特定的配置，这样可以实现一个服务器 Host 多个网站。VirtualHost 的配置会覆盖全局配置。</p>
+
+<h2 id="toc_3">mod_wsgi</h2>
+
+<p>mod_wsgi 通过 WSGIScriptAlias 这个指令，把某些指令路由给 Python 脚本处理，和 Alias 一样，第一个 Match 的生效。</p>
+
+<p><a href="http://ssmax.net/archives/977.html">mod_wsgi的两种工作模式</a></p>
+
+<h2 id="toc_4">mod_rewrite</h2>
+
+<pre><code class="language-apache">&lt;IfModule mod_rewrite.c &gt;
+    RewriteEngine On
+    # 拼 URL 时使用的前缀
+    RewriteBase /
+    # test string 可以用一堆常量，例如 %{REQUEST_URI} 
+    # CondPattern 可以是正则表达式，也可以是一些其它的 test，例如文件是否存在
+    # 默认是 AND，可以换成 [OR]
+    RewriteCond TestString CondPattern [OR]
+    # 支持 backref
+    RewriteRule Pattern Substitution [flags]
+&lt;/IfModuel&gt;
+</code></pre>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[SVM 推导]]></title>
+    <link href="http://heleifz.github.io/14698080869715.html"/>
+    <updated>2016-07-30T00:01:26+08:00</updated>
+    <id>http://heleifz.github.io/14698080869715.html</id>
+    <content type="html"><![CDATA[
+<h2 id="toc_0">1. Intuition</h2>
+
+<p>（每个）样本点距离分类面越远，说明分类面选得越好。为了度量这一点，我们引入<strong>函数间隔</strong>和<strong>几何间隔</strong>。这里的间隔（margin）指的是点与分类面的间隔。</p>
+
+<h3 id="toc_1">函数间隔</h3>
+
+<ul>
+<li><p>单个样本<br/>
+\[ \hat{\gamma}_i=y_i(\omega^Tx+b) \]</p></li>
+<li><p>样本集<br/>
+\[ \hat{\gamma}=\min_{1..m}\hat{\gamma}_i \]</p></li>
+<li><p>性质<br/>
+由于没有对 w 和 b 进行归一化，函数间隔在两者 scale 时候，将会成倍变化。</p></li>
+</ul>
+
+<h3 id="toc_2">几何间隔</h3>
+
+<ul>
+<li><p>单个样本<br/>
+\[ \gamma_i = \hat{\gamma}_i / ||\omega||\]</p></li>
+<li><p>样本集<br/>
+\[ \gamma=\min_{1..m}\gamma_i \]</p></li>
+<li><p>性质<br/>
+对 w 进行了归一化，这样，在最优化的时候，我们可以针对 w 的长度施加各种限制，但不影响最终结果。</p></li>
+</ul>
+
+<h2 id="toc_3">2. 最优化问题</h2>
+
+<h3 id="toc_4">问题化简</h3>
+
+<ol>
+<li><p>基础形态<br/>
+\[ \max_{\gamma,\omega,b}\gamma \\ y_i(\omega^tx+b)\ge\gamma \\ ||w||=1\]<br/>
+<em>最优化条件非凸</em></p></li>
+<li><p>基础形态2<br/>
+\[ \max_{\hat{\gamma},\omega,b}\hat{\gamma}/||w|| \\ y_i(\omega^tx+b)\ge\hat{\gamma} \]<br/>
+<em>最优化目标非凸</em></p></li>
+<li><p>QP形态（施加限制，函数间隔为1，且最大变最小）<br/>
+\[ \min_{\omega,b}1/2||w||^2 \\ y_i(\omega^tx+b)\ge1 \]<br/>
+<em>二次规划（凸）</em></p></li>
+</ol>
+
+<h3 id="toc_5">对偶问题</h3>
+
+<p>对于最优化问题：</p>
+
+<p>\[ \min_\omega f(\omega) \\ g_i(\omega)\le0\ (i=1...k) \\ h_i(\omega)=0\ (i=1..l)\]</p>
+
+<p>有<strong>广义拉格朗日函数</strong>:</p>
+
+<p>\[ L(\omega,\alpha,\beta) = f(\omega)+\Sigma\alpha_ig_i(\omega) + \Sigma\beta_ih_i(\omega) \]</p>
+
+<p>其中要求 alpha 大等于0（显然，否则 Primal 问题不成立）</p>
+
+<ul>
+<li><p>Primal 问题 (p*)<br/>
+\[ \min_\omega\max_{\alpha,\beta}L(\omega,\alpha,\beta) \]<br/>
+一旦 w 超出限定范围，内层的 max 立马飙到正无穷</p></li>
+<li><p>Dual 问题 (d*)<br/>
+\[ \max_{\alpha,\beta}\min_\omega L(\omega,\alpha,\beta) \]</p></li>
+<li><p>两者关系<br/>
+\[ d^*\le p^*\]<br/>
+根据alpha,beta,g,h的取值范围，在可行域内，拉格朗日函数必须小等于f(w)，自然也小等于p*，无论它怎么min，max，依然小等于。</p></li>
+</ul>
+
+<p><strong>在f,g是凸函数，h是仿射函数（wx+b)，且g包围的区域不为空的时候</strong></p>
+
+<p>w*是原问题的解，alpha*，beta*是对偶问题的解，且<br/>
+\[ d^*=p^*=L(\omega^*,\alpha^*,\beta^*)\]</p>
+
+<p>此时，有KKT条件成立（充要？）</p>
+
+<p>\[  \frac{\partial}{\partial \omega_i}L(\omega^*,\alpha^*,\beta^*)=0 \\<br/>
+    \frac{\partial}{\partial \beta_i}L(\omega^*,\alpha^*,\beta^*)=0 \\<br/>
+    \alpha^*_ig_i(\omega^*)=0 \\<br/>
+    g_i(\omega^*)\le0 \\<br/>
+    \alpha^*\ge0<br/>
+\]</p>
+
+<h2 id="toc_6">3. 将QP转换为Dual形式</h2>
+
+<h3 id="toc_7">重写限制条件</h3>
+
+<p>\[ g_i(\omega)=1-y_i(\omega^Tx_i+b)\le0\]<br/>
+性质：根据KKT条件，<strong>当alpha_i大于0时，g_i(w)=0</strong>，此时xi是支撑矢量。</p>
+
+<h3 id="toc_8">构造广义拉格朗日函数</h3>
+
+<p>\[ L(\omega,b,\alpha)=1/2||w||^2+\Sigma\alpha_ig_i(\omega)\\<br/>
+= 1/2||w||^2+\Sigma_{i=1..m}\alpha_i[1-y_i(\omega^Tx_i+b)]\\<br/>
+= 1/2||w||^2+\Sigma\alpha_i-\Sigma\alpha_iy_i\omega^Tx_i-\Sigma\alpha_i y_i b<br/>
+\]</p>
+
+<h3 id="toc_9">对于 w 求最小值</h3>
+
+<p>令<br/>
+\[<br/>
+\frac{\partial}{\partial\omega}L(\omega,b,\alpha)\\<br/>
+=\omega-\Sigma\alpha_iy_ix_i=0<br/>
+\]<br/>
+所以有：<br/>
+\[<br/>
+\omega^*=\Sigma\alpha_iy_ix_i<br/>
+\]<br/>
+将其代入到拉格朗日函数中：<br/>
+\[<br/>
+L(\omega^*,b,\alpha)=1/2(\Sigma\alpha_iy_ix_i^T)(\Sigma\alpha_iy_ix_i)+\Sigma\alpha_i-\Sigma\alpha_iy_i(\Sigma\alpha_iy_ix_i^T)x_i-\Sigma\alpha_iy_ib\\<br/>
+=1/2\Sigma_{i,j}\alpha_i\alpha_jy_iy_jx_i^Tx_j+\Sigma\alpha_i-\Sigma_{i,j}\alpha_i\alpha_jy_iy_jx_i^Tx_j-\Sigma\alpha_iy_ib<br/>
+\\<br/>
+=-1/2\Sigma_{i,j}\alpha_i\alpha_jy_iy_jx_i^Tx_j+\Sigma\alpha_i-\Sigma\alpha_iy_ib<br/>
+\]</p>
+
+<h3 id="toc_10">对于 b 求最小值</h3>
+
+<p>令<br/>
+\[<br/>
+\frac{\partial}{\partial b}L(\omega,b,\alpha)\\<br/>
+=-\Sigma a_iy_i=0<br/>
+\]<br/>
+带入到上一步中，消掉最后一项，得到：<br/>
+\[<br/>
+L(\omega^*,b,\alpha)=-1/2\Sigma_{i,j}\alpha_i\alpha_jy_iy_jx_i^Tx_j+\Sigma\alpha_i<br/>
+\]</p>
+
+<h3 id="toc_11">得到对偶问题</h3>
+
+<p>整理得到以下最终的最优化问题：</p>
+
+<p>\[<br/>
+\max_\alpha-1/2\Sigma_{i,j}\alpha_i\alpha_jy_iy_jx_i^Tx_j+\Sigma\alpha_i\\<br/>
+\alpha_i\ge0\ (i=1..m)\\<br/>
+\Sigma a_iy_i=0\ (i=1..m)<br/>
+\]</p>
+
+<p>在得到alpha后，w可以根据上面的推导得到，对于b，在w得到后，将正负样本中最接近超平面的两个加起来取平均（根据图示可以很容易看出来）</p>
+
+<p>\[<br/>
+b^*=-\frac{\min{\omega^*}^Tx_++\max{\omega^*}^Tx_-}{2}<br/>
+\]</p>
+
+<p>在预测时，我们可以不用 w，而是采用如下的公式（kernel trick的基础）</p>
+
+<p>\[<br/>
+\omega^Tx+b=\Sigma\alpha_iy_i(x_i^Tx)+b<br/>
+\]</p>
+
+<p>因为只有支撑矢量的alpha才非零，所以，我们只需要保存支撑矢量（和b），就能进行分类。</p>
+
+<h2 id="toc_12">4. 核函数</h2>
+
+<p>给定一个feature mapping（x-&gt;phi(x)），核函数K定义为：</p>
+
+<p>\[<br/>
+K(x,z)=\phi(x)^T\phi(z)<br/>
+\]</p>
+
+<p>可以看出，当x和z相近时，核函数取值越大，x和z越相似。我们可以直接找核函数，而不用找到显式的 feature mapping，为了做到这一点，必须规定核函数所需要满足的条件。</p>
+
+<h3 id="toc_13">Mercer定理</h3>
+
+<p>给定函数K，对于任意m个向量，它们构成的核矩阵对称半正定 &lt;=&gt; K是一个核函数</p>
+
+<h2 id="toc_14">5. 软间隔策略</h2>
+
+<p>为了处理线性不可分情况，SVM可以改写为：</p>
+
+<p>\[<br/>
+\min_{\omega,b}1/2||w||^2 + C\Sigma\xi_i\\<br/>
+y_i(\omega^tx+b)\ge1-\xi_i\ (i=1..m)\\<br/>
+\xi_i\ge0 (i=1..m)<br/>
+\]</p>
+
+<p>化简成对偶问题后，和之前的形式惊人相近，除了alpha的范围</p>
+
+<p>\[<br/>
+\max_\alpha-1/2\Sigma_{i,j}\alpha_i\alpha_jy_iy_jx_i^Tx_j+\Sigma\alpha_i\\<br/>
+C\ge\alpha_i\ge0\ (i=1..m)\\<br/>
+\Sigma a_iy_i=0\ (i=1..m)<br/>
+\]</p>
+
+<p>此时，b的计算也变了（略），且KKT条件有如下推论：</p>
+
+<p>\[<br/>
+\alpha_i=0 ⇒ y_i(\omega^Tx+b)\ge1\\<br/>
+\alpha_i=C ⇒ y_i(\omega^Tx+b)\le1\\<br/>
+0\le\alpha_i\le C ⇒ y_i(\omega^Tx+b)=1<br/>
+\]</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[shared_ptr 原理及事故]]></title>
