@@ -8,7 +8,7 @@
   Helei's Tech Notes
   
   </title>
- <meta name="description" content="">
+ <meta name="description" content="(map learn unkown-stream)">
  <link href="atom.xml" rel="alternate" title="Helei's Tech Notes" type="application/atom+xml">
     <link rel="stylesheet" href="asset/css/foundation.min.css" />
     <link rel="stylesheet" href="asset/css/docs.css" />
@@ -59,6 +59,8 @@
         <li><label>算法</label></li>
 
           
+            <li><a title="LSA, PLSA, LDA" href="14698090035283.html">LSA, PLSA, LDA</a></li>
+          
             <li><a title="SVM 推导" href="14698080869715.html">SVM 推导</a></li>
           
             <li><a title="Text Rank 算法应用" href="14696391901766.html">Text Rank 算法应用</a></li>
@@ -96,6 +98,8 @@
                     
                       <li class="side-title"><span>算法</span></li>
                         
+                          <li><a title="LSA, PLSA, LDA" href="14698090035283.html">LSA, PLSA, LDA</a></li>
+                        
                           <li><a title="SVM 推导" href="14698080869715.html">SVM 推导</a></li>
                         
                           <li><a title="Text Rank 算法应用" href="14696391901766.html">Text Rank 算法应用</a></li>
@@ -118,65 +122,9 @@
 
 	
 		<div class="markdown-body">
-		<h1>Apache 配置文件解释</h1>
+		<h1>LSA, PLSA, LDA</h1>
 
-		<p>我是业余 Web 开发，平时主要是做算法，大概每隔几个月会搭一个网站。服务器用的是 Apache，每次配置的时候，都奉行拿来主义，从别的地方把 <strong>httd.conf</strong> 以及 <strong>.htaccess</strong> 文件内容复制过来，对配置只知道个大概，没有深入学习。</p>
-
-<p>周末做新项目的时候，专门去 Apache 官网阅读了一下 <a href="http://httpd.apache.org/docs/2.4/">User Guide</a>，发现还是很好懂的，以前很多的疑惑都解开了。这篇文章我整理一下 Apache 配置架构，给以后的我复习用。</p>
-
-<h2 id="toc_0">Apache 配置架构</h2>
-
-<p>Apache 本身的架构是一个核心＋外围的 Module，它的配置也遵循这个结构，本文介绍 Apache 的核心配置，以及 <strong>mod_wsgi</strong> 和 <strong>mod_rewrite</strong> 两个模块。</p>
-
-<h3 id="toc_1">基本语法</h3>
-
-<p>Apache 的配置位于 <strong>/etc/apache2/httpd.conf</strong> 或者 <strong>apache2.conf</strong>  之类的地方，具体路径各个平台不同。每条配置都是一个指令 (directive) :</p>
-
-<blockquote>
-<p>指令名(如Listen) 配置值(如80)</p>
-</blockquote>
-
-<p>利用 <strong>Include</strong> 指令，配置文件还可以包含其它的配置文件或文件夹。</p>
-
-<h3 id="toc_2">作用域（Directory, Location, VirtualHost, .htaccess）</h3>
-
-<p>大部分指令都可以作用于某个特定的路径，这个路径可以用本机文件系统路径表示(Directory)，也可以用网络位置表示(Location)，这两种表示方式很多时候可以互换，不过最好用本机路径，这样安全一点，因为多个 <strong>Location</strong> 都可以到达同一个位置。</p>
-
-<p>Directory 的配置是递归传播的。</p>
-
-<p>作用域上的配置是经过 merge 后生效的，merge 的优先级是：<br/>
-1. &lt;Directory&gt; (except regular expressions) and .htaccess done simultaneously (with .htaccess, if allowed, overriding &lt;Directory&gt;)<br/>
-2. &lt;DirectoryMatch&gt; (and &lt;Directory &quot;~&quot;&gt;)<br/>
-3. &lt;Files&gt; and &lt;FilesMatch&gt; done simultaneously<br/>
-4. &lt;Location&gt; and &lt;LocationMatch&gt; done simultaneously<br/>
-5. &lt;If&gt;<br/>
-配置按照出现的顺序处理，不过对于 Directory，处理顺序是 <strong>最短-&gt;最长</strong>，例如，<code>&lt;Directory &quot;/var/web/dir&quot;&gt;</code> 会先于 <code>&lt;Directory &quot;/var/web/dir/subdir&quot;&gt;</code> 处理，如果多个 Directory 指令作用于同一路径，那么后处理的会覆盖到前处理的上面。<strong>(Apache有些逻辑是 first match，例如 Alias，有些是后面覆盖前面）</strong></p>
-
-<p>如果一个 Directory 设定了 <code>AllowOverride All</code>，那么它还可以用 .htaccess 中的配置来覆盖。</p>
-
-<p>VirtualHost 根据访问者使用的域名(name based)或者访问的 IP 地址(IP based)，使用特定的配置，这样可以实现一个服务器 Host 多个网站。VirtualHost 的配置会覆盖全局配置。</p>
-
-<h2 id="toc_3">mod_wsgi</h2>
-
-<p>mod_wsgi 通过 WSGIScriptAlias 这个指令，把某些指令路由给 Python 脚本处理，和 Alias 一样，第一个 Match 的生效。</p>
-
-<p><a href="http://ssmax.net/archives/977.html">mod_wsgi的两种工作模式</a></p>
-
-<h2 id="toc_4">mod_rewrite</h2>
-
-<pre><code class="language-apache">&lt;IfModule mod_rewrite.c &gt;
-    RewriteEngine On
-    # 拼 URL 时使用的前缀
-    RewriteBase /
-    # test string 可以用一堆常量，例如 %{REQUEST_URI} 
-    # CondPattern 可以是正则表达式，也可以是一些其它的 test，例如文件是否存在
-    # 默认是 AND，可以换成 [OR]
-    RewriteCond TestString CondPattern [OR]
-    # 支持 backref
-    RewriteRule Pattern Substitution [flags]
-&lt;/IfModuel&gt;
-</code></pre>
-
+		
 
 		</div>
 	

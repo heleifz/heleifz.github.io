@@ -4,7 +4,7 @@
   <title><![CDATA[Helei's Tech Notes]]></title>
   <link href="http://heleifz.github.io/atom.xml" rel="self"/>
   <link href="http://heleifz.github.io/"/>
-  <updated>2016-07-30T00:02:42+08:00</updated>
+  <updated>2016-07-30T11:53:40+08:00</updated>
   <id>http://heleifz.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,16 @@
   </author>
   <generator uri="http://www.mweb.im">MWeb</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[LSA, PLSA, LDA]]></title>
+    <link href="http://heleifz.github.io/14698090035283.html"/>
+    <updated>2016-07-30T00:16:43+08:00</updated>
+    <id>http://heleifz.github.io/14698090035283.html</id>
+    <content type="html"><![CDATA[
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Apache 配置文件解释]]></title>
@@ -829,7 +839,7 @@ rank_y^1(f(x))=\Sigma_{i\ne y}I(1+f_i(x) \ge f_y(x))<br/>
 
 <p>在训练过程的每一步，都仅涉及一个训练数据 \((x,y)\)，以及后续的几条采样数据，这种 online learning 的学习方法适用于海量数据集。</p>
 
-<p>实际应用中，每个对象会有 <em>多个标签</em>，在训练时，可以针对每个标签单独做一次采样。</p>
+<p>实际应用中，每个对象会有 <em>多个标签</em>，在训练时，可以针对每个标签单独跑一次采样，</p>
 
 <p>此外，我还有一个想法，模型中的输入 feature 已经是计算好了的，我们也可以把原始的数据直接放入模型，例如，利用 NN 自动学习出特征，实现 end-to-end 的打标签架构。</p>
 
