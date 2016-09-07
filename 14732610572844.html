@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
     
-  Helei's Tech Notes
+  fastText 源码分析 - Helei's Tech Notes
   
   </title>
  <meta name="description" content="(map learn unkown-stream)">
@@ -121,14 +121,10 @@
             </div>
             <div class="large-9 medium-9 columns">
 
- 
+ <div class="markdown-body">
+<h1>fastText 源码分析</h1>
 
-
-	
-		<div class="markdown-body">
-		<h1>fastText 源码分析</h1>
-
-		<h2 id="toc_0">介绍</h2>
+<h2 id="toc_0">介绍</h2>
 
 <p><a href="https://github.com/facebookresearch/fastText">fastText</a> 是 facebook 近期开源的一个词向量计算以及文本分类工具，该工具的理论基础是以下两篇论文：</p>
 
@@ -667,23 +663,57 @@ void Model::dfs(int32_t k, int32_t node, real score, std::vector&lt;std::pair&lt
 <p>算法首先对输入的叶子节点进行一次排序（\(O(nlogn)\) ），然后确定两个下标 <code>leaf</code> 和 <code>node</code>，<code>leaf</code> 总是指向当前最小的叶子节点，<code>node</code> 总是指向当前最小的非叶子节点，所以，<strong>最小的两个节点可以从 leaf, leaf - 1, node, node + 1 四个位置中取得</strong>，时间复杂度 \(O(1)\)，每个非叶子节点都进行一次，所以总复杂度为 \(O(n)\)，算法整体复杂度为 \(O(nlogn)\)。</p>
 
 
-		</div>
-	
+</div>
 
- 
-	
+<br /><br />
+<hr />
 
- 
-	
+<div class="row clearfix">
+  <div class="large-6 columns">
+	<div class="text-left" style="padding:15px 0px;">
+		
+	</div>
+  </div>
+  <div class="large-6 columns">
+	<div class="text-right" style="padding:15px 0px;">
+		
+	        <a href="14702353940825.html" 
+	        title="Next Post: EM 算法解释">EM 算法解释 &raquo;</a>
+	    
+	</div>
+  </div>
+</div>
 
- 
-	
-
- 
-	
-
-  
-  
+<div class="row">
+<div style="padding:0px 0.93em;" class="share-comments">
+<!-- 多说评论框 start -->
+	<div class="ds-thread"></div>
+<!-- 多说评论框 end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"heleitechnotes"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+<!-- 多说公共JS代码 end -->
+</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		var currentURL = '14732610572844.html';
+		$('#side-nav a').each(function(){
+			if($(this).attr('href') == currentURL){
+				$(this).parent().addClass('active');
+			}
+		});
+	});
+</script>  
 </div></div>
 
 
