@@ -4,7 +4,7 @@
   <title><![CDATA[Helei's Tech Notes]]></title>
   <link href="http://heleifz.github.io/atom.xml" rel="self"/>
   <link href="http://heleifz.github.io/"/>
-  <updated>2016-09-07T23:12:24+08:00</updated>
+  <updated>2016-09-08T01:47:13+08:00</updated>
   <id>http://heleifz.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -33,7 +33,7 @@
 <p><a href="https://arxiv.org/pdf/1607.01759v2.pdf">Bag of Tricks for Efficient Text Classification</a></p>
 </blockquote>
 
-<p>这篇论文提出了 fastText 算法，该算法实际上是将目前用来算 word2vec 的网络架构做了个小修改，原先使用一个词的上下文的所有词向量之和来预测词本身（CBOW 模型），现在改为用一段短文本的 词向量之和来对文本进行分类。</p>
+<p>这篇论文提出了 fastText 算法，该算法实际上是将目前用来算 word2vec 的网络架构做了个小修改，原先使用一个词的上下文的所有词向量之和来预测词本身（CBOW 模型），现在改为用一段短文本的词向量之和来对文本进行分类。</p>
 
 <p>在我看来，fastText 的价值是提供了一个 <strong>更具可读性，模块化程度较好</strong> 的 word2vec 的实现，附带一些新的分类功能，本文详细分析它的源码。</p>
 
@@ -49,9 +49,7 @@
 
 <p>训练数据格式为一行一个句子，每个词用空格分割，如果一个词带有前缀“<code>__label__</code>”，那么它就作为一个类标签，在文本分类时使用，这个前缀可以通过<code>-label</code>参数自定义。训练文件支持 UTF-8 格式。</p>
 
-<h2 id="toc_3">word n-gram</h2>
-
-<h2 id="toc_4">fasttext 模块</h2>
+<h2 id="toc_3">fasttext 模块</h2>
 
 <p>fasttext 是最顶层的模块，它的主要功能是<code>训练</code>和<code>预测</code>，首先是<code>训练</code>功能的调用路径，第一个函数是 <code>train</code>，它的主要作用是 <strong>初始化参数，启动多线程训练</strong>，请大家留意源码中的相关部分。</p>
 
@@ -287,7 +285,7 @@ void FastText::skipgram(Model&amp; model, real lr,
 
 <p>通过对 fasttext 模块的分析，我们发现它最核心的预测和更新逻辑都在 model 模块中，接下来，我们进入 model 模块一探究竟。</p>
 
-<h2 id="toc_5">model 模块</h2>
+<h2 id="toc_4">model 模块</h2>
 
 <p>model 模块对外提供的服务可以分为 <code>update</code> 和 <code>predict</code> 两类，下面我们分别对它们进行分析。由于这里的参数较多，我们先以图示标明各个参数在模型中所处的位置，以免各位混淆。</p>
 
@@ -295,7 +293,7 @@ void FastText::skipgram(Model&amp; model, real lr,
 
 <p>图中所有变量的名字全部与 model 模块中的名字保持一致，注意到 <code>wo_</code> 矩阵在不同的输出层结构中扮演着不同的角色。</p>
 
-<h3 id="toc_6">update</h3>
+<h3 id="toc_5">update</h3>
 
 <p><code>update</code> 函数的作用已经在前面介绍过，下面我们看一下它的实现：</p>
 
@@ -413,7 +411,7 @@ real Model::softmax(int32_t target, real lr) {
 }
 </code></pre>
 
-<h3 id="toc_7">predict</h3>
+<h3 id="toc_6">predict</h3>
 
 <p>predict 函数可以用于给输入数据打上 1 ～ K 个类标签，并输出各个类标签对应的概率值，对于层次 softmax，我们需要遍历霍夫曼树，找到 top－K 的结果，对于普通 softmax（包括负采样和 softmax 的输出），我们需要遍历结果数组，找到 top－K。</p>
 
@@ -475,13 +473,13 @@ void Model::dfs(int32_t k, int32_t node, real score, std::vector&lt;std::pair&lt
 }
 </code></pre>
 
-<h2 id="toc_8">其它模块</h2>
+<h2 id="toc_7">其它模块</h2>
 
 <p>除了以上两个模块，dictionary 模块也相当重要，它完成了训练文件载入，哈希表构建，word n-gram 计算等功能，但是并没有太多算法在里面。</p>
 
 <p>其它模块例如 Matrix, Vector 也只是封装了简单的矩阵向量操作，这里不再做详细分析。</p>
 
-<h2 id="toc_9">附录：构建霍夫曼树算法分析</h2>
+<h2 id="toc_8">附录：构建霍夫曼树算法分析</h2>
 
 <p>在学信息论的时候接触过构建 Huffman 树的算法，课本中的方法描述往往是：</p>
 
@@ -489,7 +487,7 @@ void Model::dfs(int32_t k, int32_t node, real score, std::vector&lt;std::pair&lt
 <p>找到当前权重最小的两个子树，将它们合并</p>
 </blockquote>
 
-<p>算法的性能取决于如何实现这个逻辑。网上的很多实现都是在新增节点都时遍历一次当前所有的树，这种算法的复杂度是 \(O(n^2)\)，非常愚蠢。</p>
+<p>算法的性能取决于如何实现这个逻辑。网上的很多实现都是在新增节点都时遍历一次当前所有的树，这种算法的复杂度是 \(O(n^2)\)，性能很差。</p>
 
 <p>聪明一点的方法是用一个优先级队列来保存当前所有的树，每次取 top 2，合并，加回队列。这个算法的复杂度是 \(O(nlogn)\)，缺点是必需使用额外的数据结构，而且进堆出堆的操作导致常数项较大。</p>
 
