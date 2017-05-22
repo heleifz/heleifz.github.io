@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
     
-  Apache 配置文件解释 - Helei's Tech Notes
+  如何学习新技术 - Helei's Tech Notes
   
   </title>
  <meta name="description" content="(map learn unkown-stream)">
@@ -128,64 +128,73 @@
             <div class="large-9 medium-9 columns">
 
  <div class="markdown-body">
-<h1>Apache 配置文件解释</h1>
+<h1>如何学习新技术</h1>
 
-<p>我是业余 Web 开发，平时主要是做算法，大概每隔几个月会搭一个网站。服务器用的是 Apache，每次配置的时候，都奉行拿来主义，从别的地方把 <strong>httd.conf</strong> 以及 <strong>.htaccess</strong> 文件内容复制过来，对配置只知道个大概，没有深入学习。</p>
+<p>我从 2009年～2010 年左右开始学习信息技术，从初期围绕单片机做电子设计，一路浅尝辄止，走马观花。什么语言都用过，在各种平台上都干过活，有用的没用的都学了一些，一路尝鲜一路丢。</p>
 
-<p>周末做新项目的时候，专门去 Apache 官网阅读了一下 <a href="http://httpd.apache.org/docs/2.4/">User Guide</a>，发现还是很好懂的，以前很多的疑惑都解开了。这篇文章我整理一下 Apache 配置架构，给以后的我复习用。</p>
+<p>虽然有识之士们都说，光靠广度是没法找到工作，要对一门手艺有深度，到达深奥幽玄的境界。我自知能力有限，更何况，工作后每日加班，精力不济，能让我一窥天道的时间窗口越来越窄了。</p>
 
-<h2 id="toc_0">Apache 配置架构</h2>
+<p>即便如此，我也不觉得自己不行，这就是愚蠢人的乐趣。因为总有与你同样愚蠢的人，他们很快乐，我为什么不能快乐。我不仅快乐，而且要分享，要写作，本文就谈谈在下走马观花的本领。</p>
 
-<p>Apache 本身的架构是一个核心＋外围的 Module，它的配置也遵循这个结构，本文介绍 Apache 的核心配置，以及 <strong>mod_wsgi</strong> 和 <strong>mod_rewrite</strong> 两个模块。</p>
+<h2 id="toc_0">兴味使然</h2>
 
-<h3 id="toc_1">基本语法</h3>
+<p>首先要解决驱动力的问题，即便走马观花，心里也得有股劲，是不是？所以你得喜欢编程这门手艺，不喜欢，那至少也得好奇，当个好奇宝宝。既不喜欢，也无好奇心，自主学习就没法成立。</p>
 
-<p>Apache 的配置位于 <strong>/etc/apache2/httpd.conf</strong> 或者 <strong>apache2.conf</strong>  之类的地方，具体路径各个平台不同。每条配置都是一个指令 (directive) :</p>
+<p>既然喜欢这门手艺，热爱这个行业，那么你自然有感兴趣的领域，或者小问题，这就是学习新技术前要做的第一件事，确定一个你感兴趣的方向。</p>
 
-<blockquote>
-<p>指令名(如Listen) 配置值(如80)</p>
-</blockquote>
+<p>有的朋友爱流行技术，因为网民们在学，所以他也想学。或者就业市场需要某个技能，所以被迫去学。这当然好啦，针对性地优化你的简历，在求职时候有用，但也仅限于此了。</p>
 
-<p>利用 <strong>Include</strong> 指令，配置文件还可以包含其它的配置文件或文件夹。</p>
+<p>兴味使然的学习完全不同，你能用更加轻松的心态看待每个知识点，也能在适当的时候深入挖掘一些现象的背后原因，这是一个充满快感的旅程，没有人提醒你：那里不是考点。</p>
 
-<h3 id="toc_2">作用域（Directory, Location, VirtualHost, .htaccess）</h3>
+<h2 id="toc_1">探寻入口</h2>
 
-<p>大部分指令都可以作用于某个特定的路径，这个路径可以用本机文件系统路径表示(Directory)，也可以用网络位置表示(Location)，这两种表示方式很多时候可以互换，不过最好用本机路径，这样安全一点，因为多个 <strong>Location</strong> 都可以到达同一个位置。</p>
+<p>选择了方向以后，就该选学习材料了。随处可见的大型书单其实用处有限，因为材料的准备是分阶段的，侧重点不同的，这个过程伴随着你对该领域的初步认识的建立，混杂着你的直觉，常识，以及一点点随机性。</p>
 
-<p>Directory 的配置是递归传播的。</p>
+<p>首先，做一些”自由探索”，闭上眼睛，听听伟大的互联网在你耳边的低语：Google，维基百科，问答社区。从庞杂的噪声中，你需要找到以下知识点：</p>
 
-<p>作用域上的配置是经过 merge 后生效的，merge 的优先级是：<br/>
-1. &lt;Directory&gt; (except regular expressions) and .htaccess done simultaneously (with .htaccess, if allowed, overriding &lt;Directory&gt;)<br/>
-2. &lt;DirectoryMatch&gt; (and &lt;Directory &quot;~&quot;&gt;)<br/>
-3. &lt;Files&gt; and &lt;FilesMatch&gt; done simultaneously<br/>
-4. &lt;Location&gt; and &lt;LocationMatch&gt; done simultaneously<br/>
-5. &lt;If&gt;<br/>
-配置按照出现的顺序处理，不过对于 Directory，处理顺序是 <strong>最短-&gt;最长</strong>，例如，<code>&lt;Directory &quot;/var/web/dir&quot;&gt;</code> 会先于 <code>&lt;Directory &quot;/var/web/dir/subdir&quot;&gt;</code> 处理，如果多个 Directory 指令作用于同一路径，那么后处理的会覆盖到前处理的上面。<strong>(Apache有些逻辑是 first match，例如 Alias，有些是后面覆盖前面）</strong></p>
+<ol>
+<li>基本定义：例如，机器学习是什么，不是什么？与相关概念（人工智能）之间的区别和联系。</li>
+<li>主要工具：例如，机器学习的理论工具是什么，实践方式是什么？</li>
+<li>核心问题或矛盾：例如，机器学习研究或应用中面临的基本问题是什么？</li>
+</ol>
 
-<p>如果一个 Directory 设定了 <code>AllowOverride All</code>，那么它还可以用 .htaccess 中的配置来覆盖。</p>
+<p>同时，也要了解几个主要的资料源（每个资料源不一定都适合你），例如：</p>
 
-<p>VirtualHost 根据访问者使用的域名(name based)或者访问的 IP 地址(IP based)，使用特定的配置，这样可以实现一个服务器 Host 多个网站。VirtualHost 的配置会覆盖全局配置。</p>
+<ol>
+<li>coursera/edx 公开课</li>
+<li>大部头教材英文版，中文版</li>
+<li>由网友编写的野鸡教程</li>
+</ol>
 
-<h2 id="toc_3">mod_wsgi</h2>
+<p>基本概念的探寻，学习资料的搜索，两个过程并不相互独立。基本概念的逐步建立，能帮助你更高效地筛选资料，而好的学习资料往往会花相当的篇幅来阐明基本概念。</p>
 
-<p>mod_wsgi 通过 WSGIScriptAlias 这个指令，把某些指令路由给 Python 脚本处理，和 Alias 一样，第一个 Match 的生效。</p>
+<p>不专业的作者，要么开篇就贴代码，深入细节，要么对某项技术过渡吹捧，盲目狂热。好的学习材料也许轻松幽默，也许精确冷峻，但绝对不愚蠢。请务必花时间浏览各个教材前 5% 的内容，慢慢甄别优劣。</p>
 
-<p><a href="http://ssmax.net/archives/977.html">mod_wsgi的两种工作模式</a></p>
+<p>此外，好的学习资料，能够包含适当的实践内容。无论是数学题还是编程题，能否找到参考答案，是否提供代码实验环境，都是很重要的因素。</p>
 
-<h2 id="toc_4">mod_rewrite</h2>
+<p>举几个例子，<a href="https://mitpress.mit.edu/sicp/">SICP</a>，每道题都能在 Racket 上做实验，网上也能找到<a href="http://community.schemewiki.org/?SICP-Solutions">大家的解题方法</a>；斯坦福 <a href="http://web.stanford.edu/class/cs224n/">CS224N</a>课程，完整的习题解答和项目环境；<a href="The%20Elements%20of%20Computing%20Systems%20_%20Nisan%20&amp;%20Schocken">Nand2tetris</a>，甚至有一整套硬件描述语言，虚拟机的环境，非常优秀。也有不好的例子，<a href="https://www.cs.ubc.ca/%7Emurphyk/MLbook/">MLAPP</a>，整本书都是印刷错误，习题无解答，全靠个人感觉，虽说是本好书，但阅读过程中我不停地做一些人工勘误的工作，非常痛苦，不适合入门阅读。</p>
 
-<pre><code class="language-apache">&lt;IfModule mod_rewrite.c &gt;
-    RewriteEngine On
-    # 拼 URL 时使用的前缀
-    RewriteBase /
-    # test string 可以用一堆常量，例如 %{REQUEST_URI} 
-    # CondPattern 可以是正则表达式，也可以是一些其它的 test，例如文件是否存在
-    # 默认是 AND，可以换成 [OR]
-    RewriteCond TestString CondPattern [OR]
-    # 支持 backref
-    RewriteRule Pattern Substitution [flags]
-&lt;/IfModuel&gt;
-</code></pre>
+<p>最后，很重要的一点，这个资料是否适合你当前的知识水平。太简单，以至于整本书都在印证你的想法，让你觉得它”很好读”；太难，你无法通过直觉跳过某些推导步骤，每一页的阅读都需要大量的思考，哪怕看完一整章，你也没有对这个章节的完整图景。</p>
+
+<p>合适的难度，就是让你兴奋的难度，你能从中找到你过往的一些经验，也能看到很多全新的方法和观念，学完一章后，是否有一些愉快的想象，如果有，那么它的难度刚刚好。</p>
+
+<h2 id="toc_2">短期专注</h2>
+
+<p>找到资料后，不要浪费它。快速，完整地把它消化掉，不要中断，每天至少两个小时以上的专注，周末也不要停，这是我的方法。</p>
+
+<p>有些朋友喜欢同时做几件重要的事，然后在事情之间做时间片轮转，先做做A，再做做B，这种方式有助于应对给领导长辈跑腿之类的琐事，但对学习来说效率较低。</p>
+
+<p>在短时间内全身心沉入到单一的问题中，在这段时间里，连潜意识都在帮你工作，你不仅在记忆知识点，更是在构建对这个领域的基本直觉。混合多种学习方式也很重要，不仅有被动的听和阅读，也有主动的实验，试错，推导。前文所说的资料准备，正是为了服务这个近乎宗教仪式的过程，如果选不对资料，你就没法找到这条灵性之路。</p>
+
+<h2 id="toc_3">自然遗忘</h2>
+
+<p>人类会遗忘，这件事情曾让我很难过。</p>
+
+<p>半年不接触一门手艺，就会生疏，再过半年，完全遗忘。我想把所有的理论，公式，语言，框架都记住，一有生疏，我就复习，就像抱着满满一筐苹果，一路丢，一路捡。心里疲惫，身体劳累，甚至觉得，如果最终都会遗忘，那一开始为什么要学。</p>
+
+<p>后来才想明白，苹果框满了，我们就倒掉，再来一筐梨，桃子，火龙果，葡萄。对于学习新知识的方法论，逐年在磨练精进，虽然知识点没法记住，但对于该领域的直觉已经建立。</p>
+
+<p>现在我把学习新知识，当时一次次旅行，其中的滋味，留给大家各自体会。</p>
 
 
 </div>
@@ -197,15 +206,13 @@
   <div class="large-6 columns">
 	<div class="text-left" style="padding:15px 0px;">
 		
-	        <a href="14732610572844.html"  title="Previous Post: fastText 源码分析">&laquo; fastText 源码分析</a>
-	    
 	</div>
   </div>
   <div class="large-6 columns">
 	<div class="text-right" style="padding:15px 0px;">
 		
-	        <a href="14698080869715.html" 
-	        title="Next Post: SVM 推导">SVM 推导 &raquo;</a>
+	        <a href="14732610572844.html" 
+	        title="Next Post: fastText 源码分析">fastText 源码分析 &raquo;</a>
 	    
 	</div>
   </div>
@@ -233,7 +240,7 @@ var duoshuoQuery = {short_name:"heleitechnotes"};
 </div>
 <script type="text/javascript">
 	$(function(){
-		var currentURL = '14698086378177.html';
+		var currentURL = '14953815607558.html';
 		$('#side-nav a').each(function(){
 			if($(this).attr('href') == currentURL){
 				$(this).parent().addClass('active');
