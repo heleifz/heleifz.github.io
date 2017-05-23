@@ -402,27 +402,20 @@ f(shared_ptr&lt;A&gt;(new A), shared_ptr&lt;B&gt;(new B));
 
 <div class="row">
 <div style="padding:0px 0.93em;" class="share-comments">
-<div id="disqus_thread"></div>
+<div id="container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
 <script>
-
-/**
-*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
-/*
-var disqus_config = function () {
-this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-*/
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = 'https://heleis-tech-notes.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
+var gitment = new Gitment({
+  owner: 'heleifz',
+  repo: 'heleifz/heleifz.github.io',
+  oauth: {
+    client_id: '7deba80f1937ef31e6d3',
+    client_secret: 'c7c185503c849fe0f61b3af65c78a0d1f6fbfd5a',
+  },
+})
+gitment.render('container')
 </script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-                                
 </div>
 </div>
 <script type="text/javascript">
