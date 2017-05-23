@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
     
-  神经网络计算模型 - 上篇：理论解释 - Helei's Tech Notes
+  神经网络计算模型 - 理论解释 - Helei's Tech Notes
   
   </title>
  <meta name="description" content="(map learn unkown-stream)">
@@ -63,7 +63,7 @@
           
             <li><a title="SVM 推导" href="14698080869715.html">SVM 推导</a></li>
           
-            <li><a title="神经网络计算模型 - 上篇：理论解释" href="14696391071598.html">神经网络计算模型 - 上篇：理论解释</a></li>
+            <li><a title="神经网络计算模型 - 理论解释" href="14696391071598.html">神经网络计算模型 - 理论解释</a></li>
           
             <li><a title="WSABIE 算法解释" href="14696374110477.html">WSABIE 算法解释</a></li>
           
@@ -108,7 +108,7 @@
                         
                           <li><a title="SVM 推导" href="14698080869715.html">SVM 推导</a></li>
                         
-                          <li><a title="神经网络计算模型 - 上篇：理论解释" href="14696391071598.html">神经网络计算模型 - 上篇：理论解释</a></li>
+                          <li><a title="神经网络计算模型 - 理论解释" href="14696391071598.html">神经网络计算模型 - 理论解释</a></li>
                         
                           <li><a title="WSABIE 算法解释" href="14696374110477.html">WSABIE 算法解释</a></li>
                         
@@ -128,7 +128,7 @@
             <div class="large-9 medium-9 columns">
 
  <div class="markdown-body">
-<h1>神经网络计算模型 - 上篇：理论解释</h1>
+<h1>神经网络计算模型 - 理论解释</h1>
 
 <p>传统机器学习教科书中的神经网络通常是简单的多层感知机，采用全联接层作为隐层，并经过一个 softmax 输出，现代的神经网络架构脱胎于此，却早已脱离这样的简单模型，无论是 <a href="http://caffe.berkeleyvision.org">Caffe</a> 还是 <a href="http://www.deeplearning.net/software/theano/">Theano</a>，都具有可定制，可扩展的优点，允许用户自行搭建符合需求的网络架构和运算。</p>
 
@@ -274,16 +274,11 @@
 
 <h4 id="toc_15">3. 卷积</h4>
 
-<p>比较麻烦，留作练习吧，推导时需要草稿纸画一画，但是最终的矩阵乘法会退化成卷积。:)</p>
+<p>比较麻烦，留作练习吧，推导时需要草稿纸画一画。在计算雅可比矩阵时，你会发现每一行都是卷积权重加上一个位移，所以最终的矩阵乘法，会等价于卷积。</p>
 
-<h2 id="toc_16">下篇：使用 Python 实现神经网络库</h2>
+<p>用矩阵乘法来等价卷积，是一种常用的卷积实现方法，因为许多数值计算库没有实现卷积，但一定有高效的矩阵乘法。</p>
 
-<p>有了这个理论基础，我们就可以实现一个像 Caffe 一样的神经网络架构了，在下篇中，我会使用 Python 把以上抽象结构实现，并达到以下目标：</p>
-
-<ol>
-<li>网络结构可拼装，可扩展</li>
-<li>在 MNIST 库上取得不错的准确率</li>
-</ol>
+<h2 id="toc_16">包含圈的计算图：RNN</h2>
 
 
 </div>
@@ -311,22 +306,10 @@
 
 <div class="row">
 <div style="padding:0px 0.93em;" class="share-comments">
-<!-- 多说评论框 start -->
-	<div class="ds-thread"></div>
-<!-- 多说评论框 end -->
-<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-var duoshuoQuery = {short_name:"heleitechnotes"};
-	(function() {
-		var ds = document.createElement('script');
-		ds.type = 'text/javascript';ds.async = true;
-		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-		ds.charset = 'UTF-8';
-		(document.getElementsByTagName('head')[0] 
-		 || document.getElementsByTagName('body')[0]).appendChild(ds);
-	})();
-	</script>
-<!-- 多说公共JS代码 end -->
+<!-- UY BEGIN -->
+<div id="uyan_frame"></div>
+<script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2134348"></script>
+<!-- UY END -->
 </div>
 </div>
 <script type="text/javascript">
