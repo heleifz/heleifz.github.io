@@ -4,7 +4,7 @@
   <title><![CDATA[Helei's Tech Notes]]></title>
   <link href="http://heleifz.github.io/atom.xml" rel="self"/>
   <link href="http://heleifz.github.io/"/>
-  <updated>2017-05-23T23:34:57+08:00</updated>
+  <updated>2017-10-15T23:11:54+08:00</updated>
   <id>http://heleifz.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,241 @@
   </author>
   <generator uri="http://www.mweb.im">MWeb</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Flask，从简单开始]]></title>
+    <link href="http://heleifz.github.io/15013781349463.html"/>
+    <updated>2017-07-30T09:28:54+08:00</updated>
+    <id>http://heleifz.github.io/15013781349463.html</id>
+    <content type="html"><![CDATA[
+<p>前段时间用 Flask 搭建了一个公司内部用的算法工具，对于这类工具，我对 Web 框架只有两个要求：</p>
+
+<ol>
+<li>框架好理解，学习成本低</li>
+<li>不要写多余的代码</li>
+</ol>
+
+<p>从这两点可以看出，我不仅是个精神上懒惰的人，而且是个身体上懒惰的人。PHP 我是不想再碰了，它提供的“效率“是以语言设计的灾难为代价的。</p>
+
+<p>Python 用着还行，所以我选了轻量级框架 Flask，从结果来看，它符合我上面的两个要求，且最终效果令人满意。作为项目的总结，本文就梳理一下如何用 Flask 开发 Web 应用，从最简单的开始。</p>
+
+<h2 id="toc_0">Python Web 应用是什么</h2>
+
+<p>一个 Python Web 应用包含两个部分：</p>
+
+<ol>
+<li>应用的开发：实现 Web 应用的逻辑，读数据库，拼装页面，用户登录</li>
+<li>应用的部署：将 Web 应用跑起来，多线程，多进程，异步，监听端口，所有服务器该做的事情</li>
+</ol>
+
+<p>我们希望用各种不同的技术来开发应用，用各种不同的服务器程序来跑应用，这就要求开发和部署都遵循一个统一的 <strong>通信接口</strong>，这个接口叫做 Web Server Gateway Interface，简称“WSGI”。</p>
+
+<p>WSGI 接口就是一个满足特定要求的函数</p>
+
+<pre><code class="language-python">def application(environ, start_response):
+    “”“
+    environ：包含所有 HTTP 请求信息的 dict
+    start_response：发送 HTTP 响应的函数
+    ”“”
+    start_response(&#39;200 OK&#39;, [(&#39;Content-Type&#39;, &#39;text/html&#39;)])
+    return &#39;&lt;h1&gt;Hello, web!&lt;/h1&gt;&#39;
+</code></pre>
+
+<p>只要提供了这个接口，服务端程序就能将它跑起来，不需要关心应用代码如何组织，采用何种框架。<br/>
+关于 WSGI 接口，可以参考以下三篇文章：</p>
+
+<blockquote>
+<p>WSGI 完整说明：<a href="https://www.python.org/dev/peps/pep-3333/">PEP 333 : Python Web Server Gateway Interface v1.0.1</a><br/>
+WSGI 简单说明 <a href="https://www.liaoxuefeng.com/wiki/001374738125095c955c1e6d8bb493182103fac9270762a000/001386832689740b04430a98f614b6da89da2157ea3efe2000">廖雪峰的官方网站</a><br/>
+Python Web 应用概览：<a href="http://pythonguidecn.readthedocs.io/zh/latest/scenarios/web.html">The Hitchhiker&#39;s Guide To Python</a></p>
+</blockquote>
+
+<h2 id="toc_1">Flask Web 应用开发</h2>
+
+<p>本节介绍 Flask Web 框架的使用。</p>
+
+<h3 id="toc_2">基本形态：URL 路由，获取请求，构造响应</h3>
+
+<p><a href="http://flask.pocoo.org/">Flask</a> 作为一个 Web 框架，它<strong>遵循 WSGI 接口</strong>，并且在其之上<strong>整合</strong>了 <a href="http://werkzeug.pocoo.org/">Werkzeug</a> 的 URL 路由以及 WSGI 工具库，<a href="https://www.sqlalchemy.org/">SQLAlchemy</a> 的数据库访问，<a href="http://jinja.pocoo.org/docs/2.9/">jinja2</a> 的模版渲染等功能。</p>
+
+<p>但它也是一个轻量级框架，Flask 应用最基本的形态只涉及 URL 路由，不需要配置任何东西就能工作。</p>
+
+<pre><code class="language-python">from flask import Flask
+app = Flask(__name__)
+
+@app.route(&quot;/&quot;)
+def hello():
+    return &quot;Hello World!&quot;
+</code></pre>
+
+<blockquote>
+<p>Flask 初始化使用的第一个参数的含义是 “import path”，代表当前模块的 import 名称，该参数的作用是 <strong>帮助 Flask 自动找到当前文件的绝对路径</strong> ，从而确定项目中各个资源文件的路径。很多 Web 框架都有这么一个 Root Path 参数，只不过 Flask 做得更漂亮。</p>
+</blockquote>
+
+<p><code>app</code> 对象实现了 WSGI 接口，我们现在看看这个怎么实现的。打开 Flask 类的代码，地址 <a href="https://github.com/pallets/flask/blob/master/flask/app.py">https://github.com/pallets/flask/blob/master/flask/app.py</a> ：</p>
+
+<pre><code class="language-python">def wsgi_app(self, environ, start_response):
+   # 构造请求上下文
+   ctx = self.request_context(environ)
+   error = None
+   try:
+       try:
+           # 将请求上下文推入栈中，这部分后续会解释
+           ctx.push()
+           # URL 路由，产生结果，构造 response
+           response = self.full_dispatch_request()
+       except Exception as e:
+           error = e
+           response = self.handle_exception(e)
+       except:
+           error = sys.exc_info()[1]
+           raise
+       return response(environ, start_response)
+   finally:
+       if self.should_ignore_error(error):
+           error = None
+       ctx.auto_pop(error)
+
+def __call__(self, environ, start_response):
+   &quot;&quot;&quot;Shortcut for :attr:`wsgi_app`.&quot;&quot;&quot;
+   return self.wsgi_app(environ, start_response)
+</code></pre>
+
+<p>我们发现，Flask 类实现了 <code>__call__</code> 魔术方法，所以能像函数一样使用，并且符合 WSGI 规范。实际的逻辑在 <code>wsgi_app</code> 函数中，基本上所有 Flask 的框架功能都是从这个函数中延伸出去的。此外，我们通过<strong>函数装饰器</strong>，往 <code>app</code> 里注册从 URL 到处理逻辑的映射，而 URL 路由使用了 <code>Werkzeug</code> 库的 <code>werkzeug.routing.Map</code> 类，大家可以在同一个文件中搜索并阅读。</p>
+
+<blockquote>
+<p>现在，我们使用 Flask 内置的 Debug 服务器，让应用跑起来，假设文件名叫 <code>hello.py</code>。执行 <code>FLASK_APP=hello.py flask run</code>，接着，访问 <code>http://localhost:5000/</code> 就能看到 “Hello World!”的输出了。</p>
+</blockquote>
+
+<p>现在，我们给 URL 路径带上参数，把它放到 <code>hello2</code> 函数里：</p>
+
+<pre><code class="language-python">@app.route(&quot;/hello2/&lt;name&gt;/&lt;age&gt;/&quot;)
+def hello2(name, age):
+    return &quot;Hello! &quot; + name + &quot;, you are &quot; + age + &quot; years old.&quot;
+</code></pre>
+
+<p>通常我们需要访问请求的 GET 或 POST 参数，此时，使用 Flask 的 request 对象。注意到它是一个“全局对象”，但它始终包含着<strong>当前请求</strong>的所有信息，这种全局对象的设计让 Flask 写起来十分简单顺手。</p>
+
+<pre><code class="language-python">from flask import request
+
+@app.route(&quot;/hello3/&quot;, methods=[&#39;POST&#39;, &#39;GET&#39;])
+def hello3():
+    # 获取 get 参数
+    param1 = request.args.get(&#39;param1&#39;)
+    # 获取 post 参数
+    param2 = request.request.form[&#39;param2&#39;]
+</code></pre>
+
+<p>到这一步，你已经可以用 Flask 实现一个 Web Service 了，简单直接，当然很多有用的知识点我没写，例如 <code>after_request</code> 装饰器等，你可以在 <strong><a href="http://flask.pocoo.org/snippets/">http://flask.pocoo.org/snippets/</a></strong> 里找到很多有用的代码段！当你需要更复杂的功能时，可以慢慢往里添加，这就是 Flask 的口号 <strong>“one drop at a time“</strong> 的含义，一点一滴地往应用里增加功能。</p>
+
+<blockquote>
+<p>Flask 很简单，但它最难以理解的莫过于 Context 机制，个人觉得有点过度设计，日常使用的话无需学习它，但如果你一定要了解，可以看看下面的资料：<br/>
+<a href="https://blog.tonyseek.com/post/the-context-mechanism-of-flask/">Flask 的 Context 机制</a><br/>
+Flask 作者的一个 Talk，“Flask for Fun and Profit” 里面也讲了 Context 机制 <a href="https://www.youtube.com/watch?v=1ByQhAM5c1I&amp;index=24&amp;list=WL">Youtube 链接</a><br/>
+Stackoverflow 上的一个问题，<a href="https://stackoverflow.com/questions/20036520/what-is-the-purpose-of-flasks-context-stacks">为什么 Flask 要用 Context Stack</a></p>
+</blockquote>
+
+<h3 id="toc_3">拼装页面：jinja2 模版</h3>
+
+<p>很多时候你要的不止是一个 Web Service，而是一个网站，这就需要在代码中拼装出一个 HTML 页面。 Flask 默认使用 <a href="http://docs.jinkan.org/docs/jinja2/">jinja2</a> 作为<a href="https://en.wikipedia.org/wiki/Comparison_of_web_template_engines">模版引擎</a> 帮助我们生成网页。</p>
+
+<p>基本每个模版引擎都包含了一个<strong>模版语言</strong>，这部分内容请自行参考 jinja2 的文档，这里提一下它与 Flask 相关的部分。</p>
+
+<h4 id="toc_4">使用方式</h4>
+
+<p>首先在项目目录中新建 <code>templates</code> 目录，在其中建立一个 <code>hello.html</code> 文件，内容为</p>
+
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;
+    &lt;title&gt;Flask Template&lt;/title&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;/head&gt;
+  &lt;body&gt; 
+    &lt;p&gt;{{ greetings }}&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt; 
+</code></pre>
+
+<p>接着，使用 Flask 提供的 <code>render_template</code>函数渲染模版，并将渲染结果返回。</p>
+
+<pre><code class="language-python">
+from flask import render_template
+
+@app.route(&#39;/hello4&#39;)
+def hello4():
+    # 将数据传给模版 hello.html
+    return render_template(&quot;hello.html&quot;, greetings=&quot;Hello world!&quot;)
+</code></pre>
+
+<h4 id="toc_5">模版搜索路径</h4>
+
+<p>大家注意到 <code>templates</code> 是 Flask 默认搜索模版的路径，如果你想修改这个路径，可以在初始化 Flask（或者 Blueprint，后面会提到）对象时，指定自己的路径</p>
+
+<pre><code class="language-python">app = Flask(__name__, template_folder=&#39;my_templates&#39;) 
+</code></pre>
+
+<blockquote>
+<p><a href="http://docs.jinkan.org/docs/jinja2/templates.html">Jinja2 模版语言文档</a></p>
+</blockquote>
+
+<h3 id="toc_6">组织更加复杂的应用：蓝图</h3>
+
+<p>现实中的项目往往带有多个模块，尽管模块之间总是要共享一些页面布局和资源，它们在概念上基本“相互独立”。如果把代码、模版全部揉在一起，整个项目结构混乱，难以维护。Flask 提供了一种组织项目的思路：蓝图（Blueprint）。</p>
+
+<p>蓝图与 Flask App 类似，它可以注册自己的模版目录，静态文件目录，URL 路由，装饰器钩子（例如 <code>before_request</code>)。蓝图上注册的所有东西需要被 <code>app.register_blueprint</code> 函数统一注册到全局 app 对象中才能生效。此外，蓝图还可以拥有自己的 URL 前缀用以区分模块。如下图所示：</p>
+
+<p><img src="media/15013781349463/blueprint.png" alt="blueprint"/></p>
+
+<p>有了蓝图后，我们可以按照下面的结构组织项目</p>
+
+<pre><code>app/
+  mod_users/  -- user 模块
+    templates/
+      index.html
+    __init__.py
+    users.py
+  mod_camera/  -- camera 模块
+    templates/
+      index.html
+    camera.py
+    __init__.py
+  templates/
+    base.html  --  项目基础模版
+  app.py -- 项目主文件，注册以上所有蓝图
+  static／ -- 项目静态资源
+</code></pre>
+
+<p>用过其它传统 Web 框架的朋友可能会将蓝图与所谓的 “MVC架构”做对比，实际上这两者是没有任何关系的。<strong>蓝图并不算一种架构模式</strong>，它存在的意义是帮助项目更好地组织文件，如果你愿意，可以在蓝图内部开发一个自己的 MVC 框架。</p>
+
+<p>总而言之，Flask 没有将任何一种设计模式强加于用户，只在用户需要的时候提供帮助，这也是我喜欢 Flask 的一个原因  ：）。</p>
+
+<blockquote>
+<p>阅读以下文章，完全掌握蓝图<br/>
+<a href="http://flask.pocoo.org/docs/0.12/blueprints/">蓝图：官方文档</a><br/>
+<a href="https://www.digitalocean.com/community/tutorials/how-to-structure-large-flask-applications">如何组织大型 Flask 应用</a><br/>
+<a href="http://fewstreet.com/2015/01/16/flask-blueprint-templates.html">绕过蓝图的坑：同名 template</a></p>
+</blockquote>
+
+<h2 id="toc_7">使用 gunicorn 部署 Python Web 应用</h2>
+
+<p>应用开发完毕后，就可以部署上线了，任何支持 WSGI 的 Web 容器都能运行 Flask，包括：uWSGI，gnicorn 等，具体参考后面的文档。这里，我们使用 <a href="http://gunicorn.org/">gunicorn</a> 来部署应用：</p>
+
+<pre><code class="language-bash">pip install gunicorn
+gunicorn -w 4 -b 127.0.0.1:4000 hello:app
+</code></pre>
+
+<p>既然是简单的 Web 开发框架，当然要选最轻松的部署方式啦，反正我是个懒人。</p>
+
+<blockquote>
+<p>其它参考资料：<br/>
+<a href="http://flask.pocoo.org/docs/0.12/deploying/">部署 Flask 应用</a><br/>
+<a href="http://flask-sqlalchemy.pocoo.org/2.3/">Flask-SQLAlchemy 文档</a><br/>
+<a href="http://www.pythondoc.com/flask-mega-tutorial/">Flask Mega Tutorial</a></p>
+</blockquote>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[如何学习新技术]]></title>
