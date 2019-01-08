@@ -47,6 +47,8 @@
         <li><label>技术</label></li>
 
           
+            <li><a title="Nand2tetris - 从布尔逻辑到算数运算" href="15468825413653.html">Nand2tetris - 从布尔逻辑到算数运算</a></li>
+          
             <li><a title="Nand2tetris - 布尔逻辑" href="15467841044137.html">Nand2tetris - 布尔逻辑</a></li>
           
             <li><a title="Flask，从简单开始" href="15013781349463.html">Flask，从简单开始</a></li>
@@ -102,6 +104,8 @@
                     
                       <li class="side-title"><span>技术</span></li>
                         
+                          <li><a title="Nand2tetris - 从布尔逻辑到算数运算" href="15468825413653.html">Nand2tetris - 从布尔逻辑到算数运算</a></li>
+                        
                           <li><a title="Nand2tetris - 布尔逻辑" href="15467841044137.html">Nand2tetris - 布尔逻辑</a></li>
                         
                           <li><a title="Flask，从简单开始" href="15013781349463.html">Flask，从简单开始</a></li>
@@ -148,32 +152,138 @@
 
 	
 		<div class="markdown-body">
-		<h1>2019 新年快乐</h1>
+		<h1>Nand2tetris - 从布尔逻辑到算数运算</h1>
 
-		<p>2018 过去了，是收获的一年，我更加清楚了技术的意义。</p>
-
-<blockquote>
-<p>技术的目的，是从混乱中找到秩序，从秩序中获得价值。<br/>
-技术的方法，是抽象和分析，主要是抽象。</p>
+		<blockquote>
+<p>本文是 nand2tetris 课程的读书笔记，不会列举过多细节，仅精炼出有意思的概念，供日后查阅。</p>
 </blockquote>
 
-<p>同时，我渐渐从名称和概念中解脱，思想更加自由，孔子说，君子不器。对于技术人而言，就是不要用名称和概念封死自己的路径。“设计模式”，“架构”，“算法”，“深度学习”，“底层”，有时有用，但不重要。</p>
+<hr/>
 
-<p>2018 年也是忙碌的一年，我思考工作甚于关注自己，导致荒废了学业，十分不应该。新的一年，我计划重新开始学习一些有趣且有用的知识，磨练自己的思维。</p>
+<p>从布尔逻辑的视角来看，所谓加法器只不过是一种特殊的逻辑结构。但是，我们 <strong>人类</strong> 为其加上的新的 <strong>解释</strong>，即【定长二进制加法】，因此它变得 <strong>有用</strong>。名字与实际结构，共同构成了事物的完整概念，从此，这种电路被称为加法器，不再有其它意义。</p>
+
+<hr/>
+
+<p>加法器的级联，使其扩充至 n-bit。</p>
+
+<pre><code class="language-vhdl">....
+HalfAdder(a=a[0], b=b[0], sum=out[0], carry=carry1);
+FullAdder(a=a[1], b=b[1], c=carry1, sum=out[1], carry=carry2);
+FullAdder(a=a[2], b=b[2], c=carry2, sum=out[2], carry=carry3);
+FullAdder(a=a[3], b=b[3], c=carry3, sum=out[3], carry=carry4);
+FullAdder(a=a[4], b=b[4], c=carry4, sum=out[4], carry=carry5);
+FullAdder(a=a[5], b=b[5], c=carry5, sum=out[5], carry=carry6);
+FullAdder(a=a[6], b=b[6], c=carry6, sum=out[6], carry=carry7);
+....
+</code></pre>
+
+<hr/>
+
+<p>二进制补码，是用来表示有符号整数的工具。<br/>
+依然是【名字】的作用，同样的操作序列，一旦我们将其重新解释，它立刻从无符号加法，变为有符号加法。</p>
 
 <blockquote>
-<p><a href="https://www.nand2tetris.org/">《The elements of computing systems》</a>手把手构建一个简单的计算机，更深刻理解各类计算系统及其中的抽象方法。<br/>
-《控制论与科学方法论》将事物抽象为控制系统，以控制论的语言教你做人。<br/>
-...</p>
+<p>但这里有个技术问题，为什么二进制补码能够按照这样的方式工作？</p>
 </blockquote>
 
-<p>在学习过程中，我会尽量写一些东西。曾经我因为担心写的不够全面，不爱做读书笔记，现在我没了这个心理障碍。既然知识的终点就是遗忘，那我不如聊聊自己的思考。</p>
+<p>在上大学的时候，老师直接告诉我们二进制补码的计算方式，即按位取反加1，并用时钟的工作方式，说明它的正确性。</p>
 
-<p>另外，我结婚了，买房了，装修了，这些都与技术关系不大，但让我变成一个更好的人。</p>
+<blockquote>
+<p>在时钟上，正着走 3 步，等于反着走 12 - 3 步。</p>
+</blockquote>
 
-<p>2019 年已经到来，祝大家新年快乐。</p>
+<p><img src="media/15468825413653/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-01-09%20%E4%B8%8A%E5%8D%8812.35.24.png" alt="屏幕快照 2019-01-09 上午12.35.24"/></p>
 
-<p><img src="media/15467823342030/zspace2.png" alt="zspace2"/></p>
+<p>我们是否有办法证明补码的正确性呢？具体而言：</p>
+
+<blockquote>
+<p>a + b 的补码，是否等于 a 的补码 二进制加 b 的补码<br/>
+我把无符号二进制加法写作 \(+_2\)，并将 a 的补码定义为 \(comp2(a)\)<br/>
+我们将命题改写为：<br/>
+\(comp2(a+b)=comp2(a)+_2comp2(b)\)</p>
+</blockquote>
+
+<p>证明：<br/>
+将原始无符号二进制表示为 \(bin(a)\)，且要求 \(a \ge 0\)，它具有以下性质：</p>
+
+<ol>
+<li>\(bin(a)=bin(a + k * 2^n)\)，其中 \(k \gt 0\)，这个很显然，因为是定长二进制，所以高位都丢弃了。</li>
+<li>\(bin(x+y)=bin(x)+_2bin(y)\)，这条代表二进制加法的正确性，如果不成立，我们就别用这个工具了。</li>
+</ol>
+
+<p>此外，补码的定义为：</p>
+
+<p>\(comp2(a)=\begin{equation}<br/>
+\begin{cases}<br/>
+bin(a)&amp;  2^{n-1} \gt a \ge 0\\<br/>
+bin(2^n + a)&amp; -(2^{n-1}) \le a \lt 0<br/>
+\end{cases}<br/>
+\end{equation}\)</p>
+
+<p>于是，可以改写命题为：<br/>
+\(bin(k*2^n+a+b)=bin(a+m*2^n) +_2 bin(b+l*2^n)\)，其中 k,m,l 都非负。</p>
+
+<p>使用上面的性质1，可以进一步改写命题为：<br/>
+\(bin((k+k+m+l)*2^n+a+b)=bin(a+(m+k)*2^n) +_2 bin(b+(l+k)*2^n)\)<br/>
+\(bin(a+(m+k)*2^n+b+(l+k)*2^n)=bin(a+(m+k)*2^n) +_2 bin(b+(l+k)*2^n)\)</p>
+
+<p>令 \(x=a+(m+k)*2^n,y=b+(l+k)*2^n\)，可以得到：<br/>
+\(bin(x+y)=bin(x) +_2 bin(y)\)，即上面的性质2，故原命题成立。</p>
+
+<p>对于补码的理解，有一些资料可以参考：</p>
+
+<blockquote>
+<p><a href="https://en.wikipedia.org/wiki/Modular_arithmetic">https://en.wikipedia.org/wiki/Modular_arithmetic</a><br/>
+<a href="https://igoro.com/archive/why-computers-represent-signed-integers-using-twos-complement/">https://igoro.com/archive/why-computers-represent-signed-integers-using-twos-complement/</a><br/>
+<a href="https://courses.engr.illinois.edu/ece199/fa2012/notes/twos-complement.pdf">https://courses.engr.illinois.edu/ece199/fa2012/notes/twos-complement.pdf</a></p>
+</blockquote>
+
+<hr/>
+
+<h2 id="toc_0">ALU</h2>
+
+<p>将一系列算术和逻辑运算打包到一个芯片里，并用控制位进行操作选择，就是 ALU。</p>
+
+<pre><code class="language-vhdl">CHIP ALU {
+    IN  
+        x[16], y[16],  // 16-bit inputs        
+        zx, // zero the x input?
+        nx, // negate the x input?
+        zy, // zero the y input?
+        ny, // negate the y input?
+        f,  // compute out = x + y (if 1) or x &amp; y (if 0)
+        no; // negate the out output?
+
+    OUT 
+        out[16], // 16-bit output
+        zr, // 1 if (out == 0), 0 otherwise
+        ng; // 1 if (out &lt; 0),  0 otherwise
+
+    PARTS:
+    // x 的预处理
+    Mux16(a=x, b=false, sel=zx, out=zeroedX);
+    Not16(in=zeroedX, out=negateX);
+    Mux16(a=zeroedX, b=negateX, sel=nx, out=finalX);
+    // y 的预处理
+    Mux16(a=y, b=false, sel=zy, out=zeroedY);
+    Not16(in=zeroedY, out=negateY);
+    Mux16(a=zeroedY, b=negateY, sel=ny, out=finalY);
+    // 选择 and 或者 add
+    And16(a=finalX, b=finalY, out=andXY);
+    Add16(a=finalX, b=finalY, out=addXY);
+    Mux16(a=andXY, b=addXY, sel=f, out=computed);
+    Not16(in=computed, out=negatedComputed);
+    Mux16(a=computed, b=negatedComputed, sel=no, out[15]=signBit, out[0..7]=lowBit, out[8..14]=hiBit);
+    // 顺便输出状态位
+    And(a=signBit, b=true, out=ng);
+    And16(a[15]=signBit, a[8..14]=hiBit, a[0..7]=lowBit, b=true, out=out);
+    Or8Way(in=lowBit, out=notZeroLow);
+    Or8Way(in[0..6]=hiBit, in[7]=signBit, out=notZeroHi);
+    Or(a=notZeroLow, b=notZeroHi, out=notZero);
+    Not(in=notZero, out=zr);
+
+
+</code></pre>
 
 
 		</div>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
     
-  shared_ptr 原理及事故 - Helei's Tech Notes
+  技术 - Helei's Tech Notes
   
   </title>
  <meta name="description" content="(map learn unkown-stream)">
@@ -147,10 +147,14 @@
             </div>
             <div class="large-9 medium-9 columns">
 
- <div class="markdown-body">
-<h1>shared_ptr 原理及事故</h1>
+ 
 
-<h2 id="toc_0">new与赋值的坑</h2>
+
+	
+		<div class="markdown-body">
+		<h1>shared_ptr 原理及事故</h1>
+
+		<h2 id="toc_0">new与赋值的坑</h2>
 
 <p>赋值（assignment）和new运算符在C++与Java（或C#）中的行为有本质的区别。在Java中，new是对象的构造，而赋值运算是引用的传递；而在C++中，赋值运算符意味着&quot;构造&quot;，或者&quot;值的拷贝&quot;，new运算符意味着在堆上分配内存空间，并将这块内存的管理权（责任）交给用户。C++中的不少坑，就是由new和赋值引起的。</p>
 
@@ -397,54 +401,11 @@ f(shared_ptr&lt;A&gt;(new A), shared_ptr&lt;B&gt;(new B));
 用enable_shared_from_this来使一个类能获取自身的shared_ptr</p>
 
 
-</div>
+		</div>
+	
 
-<br /><br />
-<hr />
-
-<div class="row clearfix">
-  <div class="large-6 columns">
-	<div class="text-left" style="padding:15px 0px;">
-		
-	        <a href="14696393471602.html"  title="Previous Post: Git">&laquo; Git</a>
-	    
-	</div>
-  </div>
-  <div class="large-6 columns">
-	<div class="text-right" style="padding:15px 0px;">
-		
-	</div>
-  </div>
-</div>
-
-<div class="row">
-<div style="padding:0px 0.93em;" class="share-comments">
-<div id="container"></div>
-<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
-<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
-<script>
-var gitment = new Gitment({
-  owner: 'heleifz',
-  repo: 'heleifz.github.io',
-  oauth: {
-    client_id: '7deba80f1937ef31e6d3',
-    client_secret: 'c7c185503c849fe0f61b3af65c78a0d1f6fbfd5a',
-  },
-})
-gitment.render('container')
-</script>
-</div>
-</div>
-<script type="text/javascript">
-	$(function(){
-		var currentURL = '14696398760857.html';
-		$('#side-nav a').each(function(){
-			if($(this).attr('href') == currentURL){
-				$(this).parent().addClass('active');
-			}
-		});
-	});
-</script>  
+  
+  
 </div></div>
 
 
