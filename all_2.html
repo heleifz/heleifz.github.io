@@ -152,67 +152,155 @@
 
 	
 		<div class="markdown-body">
-		<h1>Apache 配置文件解释</h1>
+		<h1>WSABIE 算法解释</h1>
 
-		<p>我是业余 Web 开发，平时主要是做算法，大概每隔几个月会搭一个网站。服务器用的是 Apache，每次配置的时候，都奉行拿来主义，从别的地方把 <strong>httd.conf</strong> 以及 <strong>.htaccess</strong> 文件内容复制过来，对配置只知道个大概，没有深入学习。</p>
+		<p><img src="media/14696374110477/1369025_221049006000_2.jpg" alt="1369025_221049006000_2" style="width:443px;"/></p>
 
-<p>周末做新项目的时候，专门去 Apache 官网阅读了一下 <a href="http://httpd.apache.org/docs/2.4/">User Guide</a>，发现还是很好懂的，以前很多的疑惑都解开了。这篇文章我整理一下 Apache 配置架构，给以后的我复习用。</p>
+<p>算法论文：<a href="http://www.thespermwhale.com/jaseweston/papers/wsabie-ijcai.pdf">WSABIE: Scaling Up To Large Vocabulary Image Annotation</a></p>
 
-<h2 id="toc_0">Apache 配置架构</h2>
+<h2 id="toc_0">介绍</h2>
 
-<p>Apache 本身的架构是一个核心＋外围的 Module，它的配置也遵循这个结构，本文介绍 Apache 的核心配置，以及 <strong>mod_wsgi</strong> 和 <strong>mod_rewrite</strong> 两个模块。</p>
+<p>WSABIE 是一个通用的打标签算法，无论对象是图像，视频，还是文本，只要能抽取出 feature，并提供一个固定的标签集合，就可以使用 WSABIE，由于算法的通用性，下文将需要打标签的东西称为 <em>对象</em>。</p>
 
-<h3 id="toc_1">基本语法</h3>
+<h2 id="toc_1">模型</h2>
 
-<p>Apache 的配置位于 <strong>/etc/apache2/httpd.conf</strong> 或者 <strong>apache2.conf</strong>  之类的地方，具体路径各个平台不同。每条配置都是一个指令 (directive) :</p>
+<h3 id="toc_2">1. Joint Word-Image Model</h3>
+
+<p>对于 WSABIE 来说，打标签的过程，就是计算所有标签与当前对象的相似性，并取出相似性最高的标签作为结果。由于对象的 feature 和标签是两种不同的东西，为了计算相似性，WSABIE 将它们映射到 <strong>同一个向量空间</strong> \( R^D \) 。</p>
+
+<p><img src="media/14696374110477/wsb-1.png" alt="wsb-1" style="width:391px;"/></p>
+
+<p>为了将对象 \(I\) 的 feature vector \( x \) 映射到 \( R^D \)，只需做线性变换 \(  \Phi _I(x)=Vx \)，其中 \(V\) 是变换矩阵。</p>
+
+<p>由于标签是离散的符号，为了将其映射到 \( R^D \)，需要采用 Word2Vec 一样的思想，把它们转换成 embedding，换言之，我们把所有标签（假设有 \(N\) 个)对应的向量存在矩阵 \(W\) （大小 \(D \times N\)）中，第 i 个标签就是矩阵的第 i 列： \( \Phi _W(i)=W_i \)</p>
+
+<p>于是，对象 \( I \) 与第 i 个标签的相似度就是：</p>
+
+<p>\[ f_i(x) = \Phi _W(i)^T \Phi _I(x)=W_i^TVx \]</p>
+
+<p>模型中的待学习参数为线性变换矩阵 \(V\)，以及所有标签的 embedding 向量 \(W\)。</p>
+
+<h3 id="toc_3">2. 损失函数</h3>
+
+<p>每条训练数据都以 \( (x,y) \) 的形式存在，其中 \(x\) 是对象，\(y\) 是它唯一的一条正确的标签。</p>
+
+<p>模型的优化目标，是让正确描述对象的标签，与对象有较高的相似度。更具体地说 \[ rank_y(f(x)) = \Sigma _{i \ne y} I(f_i(x) \ge f_y(x)) \]</p>
+
+<p>这个式子表示 <strong>&quot;排名大于 \(y\) 的标签的个数&quot;</strong>（\(I\) 是示性函数)，这条训练数据的误差是</p>
+
+<p>\[ L(rank_y(f(x)))\]</p>
+
+<p>其中 </p>
+
+<p>\[ L(k) = \Sigma _{j=1}^k \alpha_j \]</p>
+
+<p>根据常数 \( \alpha_j \) 的取值的不同，我们可以得到不同的损失函数，所以 \( L \) 其实代表一类函数。</p>
+
+<p>如果 \( \alpha_j \) 取值都为 \(C\)， 那么如果 \(y\) 被模型排到第 \(k\) 名，损失值就是 \(Ck\)。论文中 \( \alpha_j = 1/j \)。</p>
+
+<h2 id="toc_4">学习</h2>
+
+<p>WSABIE 对损失函数进行了一系列近似，让模型能够使用随机梯度下降（SGD）在线更新参数，这个学习算法是本文 <em>最有价值的部分</em>。下面依次介绍近似步骤：</p>
+
+<h3 id="toc_5">1. 改写损失函数</h3>
+
+<p>\[ err(f(x), y) = L(rank_y(f(x)) \frac{rank_y(f(x))}{rank_y(f(x)) }\]</p>
+
+<p>\[ =L(rank_y(f(x)) \frac{\Sigma_{i\ne y}I(f_i(x) \ge f_y(x))}{rank_y(f(x)} \]</p>
+
+<p>\[ =\Sigma_{i \ne y} L(rank_y(f(x)) \frac{ I(f_i(x) \ge f_y(x))}{rank_y(f(x)} \]</p>
+
+<h3 id="toc_6">2. 近似损失函数</h3>
+
+<p>使用 hinge loss 近似 0／1 损失函数，得到如下的近似损失：</p>
+
+<p>\[ \overline{err}(f(x), y)=\Sigma_{i \ne y} L(rank_y^1(f(x)) \frac{ |1-f_y(x)+f_i(x)|_+}{rank_y^1(f(x))} \]</p>
+
+<p>其中：</p>
+
+<p>\[<br/>
+rank_y^1(f(x))=\Sigma_{i\ne y}I(1+f_i(x) \ge f_y(x))<br/>
+\]</p>
+
+<p>使用这个近似的损失函数，得到在当前数据集分布的期望误差：</p>
+
+<p>\[Risk(f)=\int\overline{err}(f(x), y)dP(x,y)\]</p>
+
+<p>按照分布 \(P(x,y)\) 随机选择一个样本 \((x,y)\)，计算其 \(\overline{err}(f(x), y)\)，可以对这个期望误差进行估计。</p>
+
+<p>实际上 </p>
+
+<p>\[ \Sigma_{i\ne y}\frac{ |1-f_y(x)+f_i(x)|_+}{rank_y^1(f(x))} \]</p>
+
+<p>这个值，也可以通过采样进行估计，方法为，从满足 \( 1-f_y(x)+f_i(x) &gt; 0 \) 的所有标签中，随机采样一个 \(\overline{y}\)，计算 \( 1-f_y(x)+f_{\overline{y}}(x) \)</p>
+
+<p>综上，总共两步采样：</p>
+
+<ol>
+<li>随机选一个 \((x,y)\) </li>
+<li>随机选一个标签 \( \overline{y} \)</li>
+</ol>
+
+<p>得到 \(Risk(f)\) 的一个估计：</p>
+
+<p>\[ \overline{err}(f(x),y,\overline{y})=L(rank_y^1(f(x))(1-f_y(x)+f_{\overline{y}}(x))\]</p>
+
+<h3 id="toc_7">3. 随机梯度下降</h3>
+
+<p>接下来，就应用标准的随机梯度下降法，通过对 \(Risk(f)\) 的估计 \(\overline{err}(f(x),y,\overline{y})\) 求梯度，优化损失函数：</p>
+
+<p>\[ \beta_{t+1}=\beta{t}-\gamma_t \frac {\partial\overline{err}(f(x),y,\overline{y})} {\partial\beta_{t}}\]</p>
+
+<p>其中 \(\beta\) 是模型参数，也就是 \(W\) 和 \(V\) 矩阵。</p>
+
+<h3 id="toc_8">4. 进一步优化性能</h3>
+
+<p>此时，每一步优化的性能还是不好，原因是计算 \(\overline{err}(f(x),y,\overline{y})\) 时，我们需要知道所有满足 \( 1-f_y(x)+f_i(x) &gt; 0 \) 的标签，因为：</p>
+
+<ol>
+<li>计算 \(L(rank_y^1(f(x))\) 要用到（记得那个求和式子吗）</li>
+<li>采样的第二步要用到（因为要从这些标签里采样）</li>
+</ol>
+
+<p>论文中第 <strong>最聪明的地方</strong> 来了，作者提出了一个近似 \(\overline{err}(f(x),y,\overline{y})\) 的方法，解决以上两个问题：</p>
+
+<p>在第二步的采样中，不再从满足 \( 1-f_y(x)+f_i(x) &gt; 0 \) 的标签里采样，而是从 <strong>除去 \(y\) 的所有</strong> 标签里进行采样，如果采样到的标签 i 不满足 \( 1-f_y(x)+f_i(x) &gt; 0 \)，就把它放回，再次采样，直到找到满足条件的标签为止。</p>
+
+<p>表面上，这解决了第二次采样的问题，这种有放回采样的效果，等价于原来的采样，而且不需要事先算出所有满足条件的标签。</p>
+
+<p>但实际上，这也解决了第一个问题。假设一共有 \(k\) 个标签满足  \( 1-f_y(x)+f_i(x) &gt; 0 \)，那么，从所有标签中采样到这种标签的概率就是 \(P=\frac{k}{N－1}\)，由于这种有放回采样满足 <em>几何分布</em> （还记得大学概率课吗？一直投骰子，直到遇到6），所以期望的采样次数为：</p>
+
+<p>\[ E[采样次数] = \frac{N-1}{k} \]</p>
+
+<p>我们可以用实际的采样次数近似期望的采样次数，所以我们可以近似得到 \(k\) 的值为 \( \frac{N-1}{采样次数} \)，于是可以算出 \(L(rank_y^1(f(x))\) 的近似值。</p>
+
+<h2 id="toc_9">其它讨论</h2>
+
+<p>此外，论文还对 \(W\) 和 \(V\) 每一列的大小做了约束：</p>
+
+<p>\[ ||W||_2 &lt;= C,||V||_2 &lt;= C \]</p>
+
+<p>在优化时，如果某一列超过了 C，就将该列的值等比例缩小一下。</p>
+
+<p>如果理解了后续的采样步骤，就会理解对损失函数的近似步骤：</p>
 
 <blockquote>
-<p>指令名(如Listen) 配置值(如80)</p>
+<p>之所以将 0/1 loss 近似为 hinge loss，是为了让损失函数连续，之所以用 \(rank_y^1(f(x),y) \) 替换 \(rank_y(f(x),y) \) ，是为了在第二步采样时去掉分母</p>
 </blockquote>
 
-<p>利用 <strong>Include</strong> 指令，配置文件还可以包含其它的配置文件或文件夹。</p>
+<p>在训练过程的每一步，都仅涉及一个训练数据 \((x,y)\)，以及后续的几条采样数据，这种 online learning 的学习方法适用于海量数据集。</p>
 
-<h3 id="toc_2">作用域（Directory, Location, VirtualHost, .htaccess）</h3>
+<p>实际应用中，每个对象会有 <em>多个标签</em>，在训练时，可以针对每个标签单独跑一次采样，</p>
 
-<p>大部分指令都可以作用于某个特定的路径，这个路径可以用本机文件系统路径表示(Directory)，也可以用网络位置表示(Location)，这两种表示方式很多时候可以互换，不过最好用本机路径，这样安全一点，因为多个 <strong>Location</strong> 都可以到达同一个位置。</p>
+<p>此外，我还有一个想法，模型中的输入 feature 已经是计算好了的，我们也可以把原始的数据直接放入模型，例如，利用 NN 自动学习出特征，实现 end-to-end 的打标签架构。</p>
 
-<p>Directory 的配置是递归传播的。</p>
-
-<p>作用域上的配置是经过 merge 后生效的，merge 的优先级是：<br/>
-1. &lt;Directory&gt; (except regular expressions) and .htaccess done simultaneously (with .htaccess, if allowed, overriding &lt;Directory&gt;)<br/>
-2. &lt;DirectoryMatch&gt; (and &lt;Directory &quot;~&quot;&gt;)<br/>
-3. &lt;Files&gt; and &lt;FilesMatch&gt; done simultaneously<br/>
-4. &lt;Location&gt; and &lt;LocationMatch&gt; done simultaneously<br/>
-5. &lt;If&gt;<br/>
-配置按照出现的顺序处理，不过对于 Directory，处理顺序是 <strong>最短-&gt;最长</strong>，例如，<code>&lt;Directory &quot;/var/web/dir&quot;&gt;</code> 会先于 <code>&lt;Directory &quot;/var/web/dir/subdir&quot;&gt;</code> 处理，如果多个 Directory 指令作用于同一路径，那么后处理的会覆盖到前处理的上面。<strong>(Apache有些逻辑是 first match，例如 Alias，有些是后面覆盖前面）</strong></p>
-
-<p>如果一个 Directory 设定了 <code>AllowOverride All</code>，那么它还可以用 .htaccess 中的配置来覆盖。</p>
-
-<p>VirtualHost 根据访问者使用的域名(name based)或者访问的 IP 地址(IP based)，使用特定的配置，这样可以实现一个服务器 Host 多个网站。VirtualHost 的配置会覆盖全局配置。</p>
-
-<h2 id="toc_3">mod_wsgi</h2>
-
-<p>mod_wsgi 通过 WSGIScriptAlias 这个指令，把某些指令路由给 Python 脚本处理，和 Alias 一样，第一个 Match 的生效。</p>
-
-<p><a href="http://ssmax.net/archives/977.html">mod_wsgi的两种工作模式</a></p>
-
-<h2 id="toc_4">mod_rewrite</h2>
-
-<pre><code class="language-apache">&lt;IfModule mod_rewrite.c &gt;
-    RewriteEngine On
-    # 拼 URL 时使用的前缀
-    RewriteBase /
-    # test string 可以用一堆常量，例如 %{REQUEST_URI} 
-    # CondPattern 可以是正则表达式，也可以是一些其它的 test，例如文件是否存在
-    # 默认是 AND，可以换成 [OR]
-    RewriteCond TestString CondPattern [OR]
-    # 支持 backref
-    RewriteRule Pattern Substitution [flags]
-&lt;/IfModuel&gt;
-</code></pre>
+<p>算法名字很像&quot;芥末&quot;，所以文章的开头我放了芥末。</p>
 
 
 		</div>
+	
+
+ 
 	
 
  
