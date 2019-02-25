@@ -4,7 +4,7 @@
   <title><![CDATA[Helei's Tech Notes]]></title>
   <link href="http://heleifz.github.io/atom.xml" rel="self"/>
   <link href="http://heleifz.github.io/"/>
-  <updated>2019-01-10T23:22:25+08:00</updated>
+  <updated>2019-01-10T23:23:13+08:00</updated>
   <id>http://heleifz.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,89 @@
   </author>
   <generator uri="http://www.mweb.im">MWeb</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Nand2tetris - CPU 是机器语言的解释器]]></title>
+    <link href="http://heleifz.github.io/15511071282967.html"/>
+    <updated>2019-02-25T23:05:28+08:00</updated>
+    <id>http://heleifz.github.io/15511071282967.html</id>
+    <content type="html"><![CDATA[
+<blockquote>
+<p>本文是 nand2tetris 课程的读书笔记，不会列举过多细节，仅精炼出有意思的概念，供日后查阅。</p>
+</blockquote>
+
+<hr/>
+
+<p>CPU 的目的是解释机器语言。<br/>
+解释意味着逻辑的 <strong>分支</strong>。</p>
+
+<pre><code>输入A =&gt; 产生行为X
+输入B =&gt; 产生行为Y
+</code></pre>
+
+<p>ALU 实现了对基础算术逻辑运算的分支，除此之外，CPU 还需要读写内存和寄存器。<br/>
+这部分逻辑构成了围绕着 ALU 的外部电路。</p>
+
+<p>既然 CPU 的核心功能是“分支”（更广义的概念，不单指 JMP 这种分支）<br/>
+那么它的复杂度就是分支的复杂度。<br/>
+通过硬件的层次化设计，将复杂度拆散到各个中间层。例如：寄存器，ALU<br/>
+从而化繁为简，从机械进化成思维。</p>
+
+<pre><code class="language-verilog">CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+    
+    // ALU 计算逻辑
+    Not(in=instruction[15], out=isAIns);
+    Mux16(a=instruction, b=aluOut, sel=instruction[15], out=newA);
+    Or(a=instruction[5], b=isAIns, out=needNewA);
+    ARegister(in=newA, load=needNewA, out=aValue);
+
+    And(a=instruction[4], b=instruction[15], out=needNewD);
+    DRegister(in=aluOut, load=needNewD, out=dValue);
+    Mux16(a=aValue, b=inM, sel=instruction[12], out=aluInMA);
+    ALU(x=dValue, y=aluInMA, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], 
+                f=instruction[7], no=instruction[6], out=aluOut, zr=aluZr, ng=aluNg);
+
+    // 结果更新逻辑
+    And16(a=aluOut, b=true, out=outM);
+    And(a=instruction[3], b=instruction[15], out=writeM);
+    And16(a=aValue, b=true, out[0..14]=addressM);
+
+    // 程序计数器（PC）更新逻辑
+    Not(in=aluZr, out=nonZero);
+    Not(in=aluNg, out=notNeg);
+    And(a=nonZero, b=notNeg, out=greater);
+    And(a=greater, b=instruction[0], out=needJump1);
+    
+    And(a=aluNg, b=instruction[2], out=needJump2);
+
+    And(a=aluZr, b=instruction[1], out=needJump3);
+
+    Or(a=needJump1, b=needJump2, out=foo2);
+    Or(a=foo2, b=needJump3, out=foo3);
+    And(a=instruction[15], b=foo3, out=needNewPc);
+    Not(in=needNewPc, out=needIncPc);
+
+    PC(in=aValue, load=needNewPc, inc=needIncPc, reset=reset, out[0..14]=pc);
+} 
+</code></pre>
+
+<p>CPU 与 Memory 和外围设备连接，就是基本的计算机。</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Nand2tetris - 触发器，寄存器，RAM]]></title>

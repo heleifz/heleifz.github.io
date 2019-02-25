@@ -47,6 +47,8 @@
         <li><label>技术</label></li>
 
           
+            <li><a title="Nand2tetris - CPU 是机器语言的解释器" href="15511071282967.html">Nand2tetris - CPU 是机器语言的解释器</a></li>
+          
             <li><a title="Nand2tetris - 触发器，寄存器，RAM" href="15471318129470.html">Nand2tetris - 触发器，寄存器，RAM</a></li>
           
             <li><a title="Nand2tetris - 从布尔逻辑到算数运算" href="15468825413653.html">Nand2tetris - 从布尔逻辑到算数运算</a></li>
@@ -106,6 +108,8 @@
                     
                       <li class="side-title"><span>技术</span></li>
                         
+                          <li><a title="Nand2tetris - CPU 是机器语言的解释器" href="15511071282967.html">Nand2tetris - CPU 是机器语言的解释器</a></li>
+                        
                           <li><a title="Nand2tetris - 触发器，寄存器，RAM" href="15471318129470.html">Nand2tetris - 触发器，寄存器，RAM</a></li>
                         
                           <li><a title="Nand2tetris - 从布尔逻辑到算数运算" href="15468825413653.html">Nand2tetris - 从布尔逻辑到算数运算</a></li>
@@ -156,7 +160,7 @@
 
 	
 		<div class="markdown-body">
-		<h1>Nand2tetris - 触发器，寄存器，RAM</h1>
+		<h1>Nand2tetris - CPU 是机器语言的解释器</h1>
 
 		<blockquote>
 <p>本文是 nand2tetris 课程的读书笔记，不会列举过多细节，仅精炼出有意思的概念，供日后查阅。</p>
@@ -164,48 +168,73 @@
 
 <hr/>
 
-<p>存储的意思是，维持曾经有的状态。<br/>
-一旦有了“曾经”，我们的系统就有了时间概念。<br/>
-时钟信号为系统带来时间，触发器使系统能看一眼“曾经”。</p>
+<p>CPU 的目的是解释机器语言。<br/>
+解释意味着逻辑的 <strong>分支</strong>。</p>
 
-<blockquote>
-<p>\(out(t) = in(t - 1)\)</p>
-</blockquote>
+<pre><code>输入A =&gt; 产生行为X
+输入B =&gt; 产生行为Y
+</code></pre>
 
-<p>如果将输出端接回输入端，我们可以让 \(out(t)\) 保持无限长的时间：</p>
+<p>ALU 实现了对基础算术逻辑运算的分支，除此之外，CPU 还需要读写内存和寄存器。<br/>
+这部分逻辑构成了围绕着 ALU 的外部电路。</p>
 
-<blockquote>
-<p>\(out(t) = out(t-1)\)</p>
-</blockquote>
+<p>既然 CPU 的核心功能是“分支”（更广义的概念，不单指 JMP 这种分支）<br/>
+那么它的复杂度就是分支的复杂度。<br/>
+通过硬件的层次化设计，将复杂度拆散到各个中间层。例如：寄存器，ALU<br/>
+从而化繁为简，从机械进化成思维。</p>
 
-<p>如果给这个函数加上一个控制位，我们就得到了 1-bit 寄存器：</p>
+<pre><code class="language-verilog">CHIP CPU {
 
-<blockquote>
-<p>\(out(t)=\begin{equation}<br/>
-\begin{cases}<br/>
-out(t-1)&amp;  load = 0\\<br/>
-in&amp; load = 1\\<br/>
-\end{cases}<br/>
-\end{equation}\)</p>
-</blockquote>
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
 
-<p>如果将它与加法器连在一起，我们就得到了计数器：</p>
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
 
-<blockquote>
-<p>\(out(t) = out(t-1) + 1\)</p>
-</blockquote>
+    PARTS:
+    
+    // ALU 计算逻辑
+    Not(in=instruction[15], out=isAIns);
+    Mux16(a=instruction, b=aluOut, sel=instruction[15], out=newA);
+    Or(a=instruction[5], b=isAIns, out=needNewA);
+    ARegister(in=newA, load=needNewA, out=aValue);
 
-<p>基于触发器与反馈回路的结合，我们可以构造任意复杂的，具有状态的系统。</p>
+    And(a=instruction[4], b=instruction[15], out=needNewD);
+    DRegister(in=aluOut, load=needNewD, out=dValue);
+    Mux16(a=aValue, b=inM, sel=instruction[12], out=aluInMA);
+    ALU(x=dValue, y=aluInMA, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], 
+                f=instruction[7], no=instruction[6], out=aluOut, zr=aluZr, ng=aluNg);
 
-<p><img src="media/15471318129470/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202019-01-10%20%E4%B8%8B%E5%8D%8811.10.58.png" alt="屏幕快照 2019-01-10 下午11.10.58"/></p>
+    // 结果更新逻辑
+    And16(a=aluOut, b=true, out=outM);
+    And(a=instruction[3], b=instruction[15], out=writeM);
+    And16(a=aValue, b=true, out[0..14]=addressM);
 
-<hr/>
+    // 程序计数器（PC）更新逻辑
+    Not(in=aluZr, out=nonZero);
+    Not(in=aluNg, out=notNeg);
+    And(a=nonZero, b=notNeg, out=greater);
+    And(a=greater, b=instruction[0], out=needJump1);
+    
+    And(a=aluNg, b=instruction[2], out=needJump2);
 
-<p>用 1-bit 寄存器并联，我们得到了 n-bit register。<br/>
-用 k 个 n-bit register 并联，加上寻址逻辑电路，我们得到了 RAM 的基本架构。<br/>
-由简单到复杂演变，全依赖组件间的抽象架构。register 提供单个字的存储 <strong>服务</strong>，RAM 调用了这一服务，并对更上层模块提供了随机存储 <strong>服务</strong>。</p>
+    And(a=aluZr, b=instruction[1], out=needJump3);
 
-<p>计算机技术日新月异，程序员很容易跟不上时代，这是真的吗？：）</p>
+    Or(a=needJump1, b=needJump2, out=foo2);
+    Or(a=foo2, b=needJump3, out=foo3);
+    And(a=instruction[15], b=foo3, out=needNewPc);
+    Not(in=needNewPc, out=needIncPc);
+
+    PC(in=aValue, load=needNewPc, inc=needIncPc, reset=reset, out[0..14]=pc);
+} 
+</code></pre>
+
+<p>CPU 与 Memory 和外围设备连接，就是基本的计算机。</p>
 
 
 		</div>
